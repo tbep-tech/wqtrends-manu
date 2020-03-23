@@ -1,1 +1,3 @@
-README.md
+# README
+
+Materials for water quality trends assessment using GAMs
