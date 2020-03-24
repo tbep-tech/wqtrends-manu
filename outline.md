@@ -1,0 +1,1 @@
+* Of interest - seasonal fit for GAMs has largely been unexplored, Murphy et al. the first but also mention need to test change in seasonal variation
