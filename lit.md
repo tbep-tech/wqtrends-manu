@@ -5,6 +5,7 @@
 * Haraguchi et al. 2015. Long-term changes of the phytoplankton community and biomass in the subtropical shallow Patos Lagoon Estuary, Brazil [link](https://doi.org/10.1016/j.ecss.2015.03.007)
     * Evaluated long-term changes in phytoplankton (20 years) in a shallow lagoon
     * Used GAMs to remove salinity from time series, which was a substantial component explaining the trends, both lagoon outflow and oceanic inflows
+    * Year and month used as categorical variables, saliniyt as continuous in GAM to compare with other water quality parameters
     * Isolated long-term climatic signal from ENSO after removing salinity effect from time series
 
 * Riemann et al. 2016. Recovery of Danish Coastal Ecosystems After Reductions in Nutrient Loading: A Holistic Ecosystem Approach [link](https://link.springer.com/article/10.1007%2Fs12237-015-9980-0)
@@ -38,9 +39,17 @@
     * Evaluated long-term changes in nutrient concentrations, nutrient ratios, chlorophyll and responses of chlorophyll to changes in nutrients in the spring and summer
     * Need to evaluate how seasonal differences were analyzed
     
-* Testa et al. 2018
+* Testa et al. 2018. Nutrient- and Climate-Induced Shifts in the Phenology of Linked Biogeochemical Cycles in a Temperate Estuary. [link](https://doi.org/10.3389/fmars.2018.00114)
+    * Evaluated phenological/seasonal shifts in biogeochemical cycles in Chesapeake Bay using 32 year record
+    * Used GAMs to model daily observations of response variables with smoother functions for decimal date, day of year, salinity, and different ti terms.  A lagged fixed year effect was also added. 
+    * smooths with p values > 0.1 were dropped
+    * Usec box-cox methods for transformation
 
-* Morton and Henderson 2008. Estimation of nonlinear trends in water quality: an improved approach using generalized additive models [link]()
+* Morton and Henderson 2008. Estimation of nonlinear trends in water quality: an improved approach using generalized additive models [link](https://doi.org/10.1029/2007WR006191)
+    * Advocates for use of GAMs to evaluate non-linear trends in the presence of serially-correlated errors
+    * Compares GAMs with Seasonal Kendall and robust regression
+    * Also includes methods for adjustment to seasonal or flow effects
+    * Provides citations for use of GAMs in air quality studies  
 
 * Yang and Moyer 2020. Estimation of nonlinear water-quality trends in high-frequency monitoring data [link](https://doi.org/10.1016/j.scitotenv.2020.136686)
     * Close examination of serial correlation issue with high-frequency monitoring data using GAMs, also evaluated trend estimation (maybe same as Murphy?) and slope change detection at arithmetic scales
