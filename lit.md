@@ -4,9 +4,10 @@
 
 Estimation of nonlinear water-quality trends in high-frequency monitoring data [link](https://doi.org/10.1016/j.scitotenv.2020.136686)
 
-* Close examination of serial correlation issue with high-frequency monitoring data using GAMs, also evaluated trend estimation (maybe same as Murphy?) and slope change detection at arithmetic scales
+* Close examination of serial correlation issue with high-frequency monitoring data using GAMs, also evaluated trend estimation (maybe same as Murphy?) and slope change detection at arithmetic scales, dealing with back-transformation bias
 * Evaluated water temp, turbidity, and specific conductance, focusing mostly on identifying drivers of change
 * Followed similar setup as Murphy et al. developing GAMs with increasing complexity, time and other wq variables as predictors
+* Also evaluated effects of changing k on trend estimates and fit, concluding that the "exact k-value is not that essential for GAM trend estimation" (p. 10)
 
 ## Murphy et al. 2019
 
