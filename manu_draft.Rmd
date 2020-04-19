@@ -36,6 +36,8 @@ spelling::spell_check_files('manu_draft.Rmd')
 
 # Introduction
 
+Cloern et al. 2020 [link](https://link.springer.com/article/10.1007/s12237-020-00737-w)
+
 # Methods
 
 ## Study area and data sources
