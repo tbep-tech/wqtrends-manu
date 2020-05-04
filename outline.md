@@ -50,6 +50,7 @@
      * Methods developed to address stakeholder questions but has broader importance beyond SF
      * Which gam structure is best, highlight gam2 v gam6 at station 18 vs station 32 and longitudinal change along axis
      * Ecological interpretation, maybe link to GAM applications to other variables (e.g., DO, GPP)
+     * Trend assessment - what second stage analysis adds to the GAM approach, possibly brief discussion about how the management need would influence how trends are assessed
      * Limitations and follow-up analysis
          * Did not address serial correlation (e.g., Yang and Moyer 2020), but not a huge issue for monthly LTM data
          * Did not incorporate flow-normalization
