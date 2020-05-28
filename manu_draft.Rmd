@@ -3,6 +3,7 @@ title: "Application of Generalized Additive Models for long-term and seasonal tr
 output: 
   bookdown::word_document2:
     reference_docx: my_styles.docx
+always_allow_html: true
 bibliography: refs.bib
 author: "Marcus W. Beck (mbeck@tbep.org), Perry de Valpine (pdevalpine@berkeley.edu), Rebecca Murphy (rmurphy@chesapeakebay.net), Ian Wren (ianw@sfei.org), Ariella Chelsky (ariellac@sfei.org), Melissa Foley (melissaf@sfei.org), David B. Senn (davids@sfei.org)"
 urlcolor: blue
@@ -85,7 +86,7 @@ To evaluate GAMs with SFE chloropyll data, we followed an approach that built on
 (\#eq:gamsix)
 \end{equation}
 
-For each GAM, chlorophyll is modelled using a link function $g()$ that relates the response variable to the independent variables $year$ and day of year ($doy$).  The $year$ variable is a continuous measure for date in decimal time, where date is expressed as a continuous numeric value with year on the left of the decimal and date within the year to the right of the decimal (e.g., July 1st 2019 would be 2019.5).  The $doy$ variable is an integer value for the Julian day in each year (from 1 to 366) that represents the seasonal component of the time series. The estimate $s_0$ is an intercept value and $\beta_1$ is a slope estimate for a linear year effect included in all models. The $s_1()$ and $s_2()$ functions are different smoothers for $year$ and $doy$ where the former uses a thin-plate spline and the latter uses a cyclic cubic spline to capture the periodic seasonal component.  The $ti_1()$ function is a tensor product interaction between $year$ and $doy$ that allows the seasonal component to change between years.  Within the $ti_1()$ function are the two separate smoothers for year as a thin-plate spline and $doy$ as a cyclic cubic spline. As with conventional linear models, the remaining variance in the response not captured by the functional form of the model is expressed as an error term $\epsilon$ that is normally-distributed having mean equal to zero and variance as $\sigma^2$.  The residual variance is used to back-transform model estimates for trend testing, described below.  
+For each GAM, chlorophyll is modelled using a link function $g()$ that relates the response variable to the independent variables $year$ and day of year ($doy$) (Table \@ref(tab:modsumtab), Figure \@ref(fig:modsumfig)).  The $year$ variable is a continuous measure for date in decimal time, where date is expressed as a continuous numeric value with year on the left of the decimal and date within the year to the right of the decimal (e.g., July 1st 2019 would be 2019.5).  The $doy$ variable is an integer value for the Julian day in each year (from 1 to 366) that represents the seasonal component of the time series. The estimate $s_0$ is an intercept value and $\beta_1$ is a slope estimate for a linear year effect included in all models. The $s_1()$ and $s_2()$ functions are different smoothers for $year$ and $doy$ where the former uses a thin-plate spline and the latter uses a cyclic cubic spline to capture the periodic seasonal component.  The $ti_1()$ function is a tensor product interaction between $year$ and $doy$ that allows the seasonal component to change between years.  Within the $ti_1()$ function are the two separate smoothers for year as a thin-plate spline and $doy$ as a cyclic cubic spline. As with conventional linear models, the remaining variance in the response not captured by the functional form of the model is expressed as an error term $\epsilon$ that is normally-distributed having mean equal to zero and variance as $\sigma^2$.  The residual variance is used to back-transform model estimates for trend testing, described below.  
 
 The link functions $g()$ for each model were chosen as either logarithmic transformations (base 10) or best estimates of Box-Cox power transformations for chlorophyll.  A comparison of GAM perforamcne between transformation methods has not yet been explored in the application of GAMs to long-term water quality monitoring data.  The logarithmic transformation is commonly used for chlorophyll to approximate a log-normal distribution of the response variable. However, alternative transformations could provide improved model fits and reduced uncertainty estimates in the fitted parameters by better satisying assumptions for GAMs.  The Box-Cox method was also used to transform chlorophyll as a comparison to the logarithmic transformation (Box and Cox 1964).  The Box-Cox method requires an estimate of the parameter $\lambda$, whereby the the optimal value is based on a minimization function of a log-likelihood profile vector.  The profile vector for each chlorophyll time series was obtained using the *boxcox* funtion from the MASS package [@Venables02 to evaluate log-likelihood estimates of $\lambda$ across the range -4 to 4.  Once the optimal $\lambda$ value was identified, chlorophyll was transformed using the following power transformation [@Box64]:
 
@@ -96,7 +97,7 @@ g\left(chl;\lambda\right) = \begin{cases} \frac{chl ^ {\lambda} - 1}{\lambda} & 
 
 where $g()$ is the transformation function for the appropriate GAM at the esitmated $\lambda$ value. Note that in some cases the Box-Cox transformation is a logarithmic transformation if $\lambda$ is estimated as zero.  The *BoxCox* function from the forecast package [@Hyndman20] in R was used to transform the chlrophyll time series with the optimal $\lambda$ value.  Equation \@ref(eq:boxcox) is only appropriate for positive values of a response variable, as for chlorophyll.
 
-A challenge for optimizing GAMs to time series data with significant intra- and interannual variation is choosing an appropriate functional form (i.e., gam0, gam1, gam2, or gam6) and determining how much variation could be explained by the smoothers in each function.  The four models above provide tradeoffs in the functional forms that balance descriptive and computational efficiency.  However, the individual smoothing functions (i.e, $s_1()$, $s_2()$, $s_2^*()$ and $ti_1()$) require an explicit declaration of how much variation could be explained for the separate $year$ and $doy$ components.  This requires user input on the potential upper limit for the *k*-values that could be used during model fitting.  Initial testing by Murphy et al. (2019) showed that the default *k* values in the mgcv package were insufficient for describing the interannual variation in the response variable and specified the upper limit for the number of knots for the $s_2(year)$ smoother as the maximum between 10 or  $2 / 3 \times$ the number of years in the time series.   We follow the same approach herein for gam1 and gam2.  Further, the default *k*-values for $s_2()$ and $ti_1()$ were considered appropriate and not tested further. For the application to SFE chlorophyll data, gam6 was also added as an extension of gam1, where the total number of knots for the $year$ smoother, $s_2^*()$, was increased to 12 times the total number of years in the time series.  This approach potentially allows the smoother for $year$ to be completely unconstrained in how much variance is fit within and between years.  
+A challenge for optimizing GAMs to time series data with significant intra- and interannual variation is choosing an appropriate functional form (i.e., gam0, gam1, gam2, or gam6) and determining how much variation could be explained by the smoothers in each function.  The four models above provide tradeoffs in the functional forms that balance descriptive and computational efficiency (Table \@ref(tab:modsumtab), Figure \@ref(fig:modsumfig)).  However, the individual smoothing functions (i.e, $s_1()$, $s_2()$, $s_2^*()$ and $ti_1()$) require an explicit declaration of how much variation could be explained for the separate $year$ and $doy$ components.  This requires user input on the potential upper limit for the *k*-values that could be used during model fitting.  Initial testing by Murphy et al. (2019) showed that the default *k* values in the mgcv package were insufficient for describing the interannual variation in the response variable and specified the upper limit for the number of knots for the $s_2(year)$ smoother as the maximum between 10 or  $2 / 3 \times$ the number of years in the time series.   We follow the same approach herein for gam1 and gam2.  Further, the default *k*-values for $s_2()$ and $ti_1()$ were considered appropriate and not tested further. For the application to SFE chlorophyll data, gam6 was also added as an extension of gam1, where the total number of knots for the $year$ smoother, $s_2^*()$, was increased to 12 times the total number of years in the time series.  This approach potentially allows the smoother for $year$ to be completely unconstrained in how much variance is fit within and between years.  
 
 All models were compared using standard summary statistics describing overall model fit to the observed data.  In addition to the GCV score, models were compared using the Akaike Information Criterion (AIC) and $R^2$ summmary statistics.  Comparisons were made between the different GAMs in equations \@ref(eq:gamzero) to \@ref(eq:gamsix) and for the transformations used to define the $g()$ function for chlorophyll at each station. Model predictions were based on the standard model output from the *predict()* function from the mgcv package.  A long-term trend independent of seasonal variation was also estimated for each model by subtracting the seasonal terms (i.e., $s_1(doy)$ and $ti_1(doy, year)$) from the predictions. Back-transformation of results were obtained by exponentiation if the log-transformed variable was used or using the *InvBoxCox()* function from the forecast package if the Box-Cox transformation was used. For hypothesis tests that required estimates of central tendency and confidence intervals for mean values, back-transformations were based on an exponentiation or inverse function of the transformed response variable as before, with the addition of a correction factor.  This bias-correction factor was simply the variance of the model residuals divided by two for variables in log-space and correction with a forecast variance estimate as specified in the *InvBoxCox()* function from the forecast package.  
 
@@ -149,6 +150,57 @@ Each of the four GAM structures were used to fit models to the chlorophyll time 
 
 # Figures
 
+```{r modsumfig, fig.height = 4.5, fig.width = 6, fig.cap = "General output for each of the four GAM structures in equations \\@ref(eq:gamzero) to \\@ref(eq:gamsix).  Day of year (Julian) is on the x-axis and each curve represents a different fitted year for chlorophyll concentration."}
+# get predictions for all four gams
+tomod <- rawdat %>%
+  filter(station %in% 22) %>%
+  filter(param %in% 'chl')
+
+# use previously fitted list of models
+trans <- 'boxcox'
+mods <- list(
+  gam0 = anlz_gam(tomod, mod = 'gam0', trans = trans),
+  gam1 = anlz_gam(tomod, mod = 'gam1', trans = trans),
+  gam2 = anlz_gam(tomod, mod = 'gam2', trans = trans),
+  gam6 = anlz_gam(tomod, mod = 'gam6', trans = trans)
+)
+
+p1 <- show_prddoy(mods = mods, ylab = 'Chlorophyll-a (ug/L)', nfac = 2, size = 0.8, alpha = 0.8) + 
+  theme(legend.position = 'right') + 
+  guides(colour = ggplot2::guide_colourbar(barheight = 15, barwidth = 1)) +
+  scale_colour_gradient(low = "white", high = "black") + 
+  theme_minimal() + 
+  theme(
+    legend.title = element_blank()
+  )
+
+p1
+```
+
+
 # Tables
+
+```{r modsumtab}
+tab <- tibble(
+  GAM = c('`gam0`', '`gam1`', '`gam2`', '`gam6`'),
+  Summary = c(
+    'Linear trend with seasonality', 
+    'Nonlinear trends seasonality (constrained knots)', 
+    'Nonlinear trends wiht seasonality, plus interaction',
+    'Nonelinear trends with seasonality (unconstrained knots)'
+  ),
+  Details = c(
+    'A linear trend in time over the course of the time series (cyear); and Within-year seasonal fluctuations that follow the same pattern every year - e.g. large spring bloom and small fall bloom (`s(doy, bs = "cc")`)',
+    'Treats cyear and doy same as gam0; and A smooth non-linear trend through time, such that the seasonal peaks are similar across years, but interannual change is evident', 
+    'Treats cyear and doy same as gam1; and Within-year seasonal fluctuations that vary across years but in a constrained pattern compared to gam6 (`ti(year, doy, bs = c("tp", "cc"))`)', 
+    'Variant of gam1 with much higher values of k, allowing the splines to follow greater fluctuations both within and across years.')
+  )
+
+# table stuff
+cap.val <- 'Summary and details for each of the GAM structures in equations \\@ref(eq:gamzero) to \\@ref(eq:gamsix).'
+
+# table
+knitr::kable(tab, booktabs = T, caption = cap.val)
+```
 
 # References
