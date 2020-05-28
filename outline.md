@@ -18,7 +18,10 @@
           * Use in management context
           * Overview of Murphy et al. 2019, Yang and Moyer 2020
           * Limitations of existing studies
+          * Utility of integrating explanatory variables (i.e. temp, flow/salinity, NPGO/ENSO indx)
      * San Francisco Bay NMS story - increase in South Bay, need to see if increase is 'significant'
+          * Build on Cloern et al 2020
+          * Context of SF Bay as within the ~90%, in terms of areal N-loading to estuarine systems worldwide yet physical/biological factors resulting in phyto suppression. Can GAMs assist in the rapid screening of explanatory variables 
      * Study objectives: 
           * Present methods and modification of GAMs as applied to SF South Bay
           * Quantify relative model performance for explaning long-term trends
@@ -55,5 +58,6 @@
          * Did not address serial correlation (e.g., Yang and Moyer 2020), but not a huge issue for monthly LTM data
          * Did not incorporate flow-normalization
          * Addition of explanatory predictors
+         * Estimate the role of physical factors (hydrology, oceanic conditions) 
      * Highlight web tools - Shiny dashboard and R package
      * Conclusions
