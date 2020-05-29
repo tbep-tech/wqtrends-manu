@@ -27,6 +27,7 @@ library(flextable)
 library(officer)
 
 data(locs)
+data(modprf)
 
 locs <- locs %>% 
   rename(station = Station)
@@ -150,6 +151,8 @@ Each of the four GAM structures were used to fit models to the chlorophyll time 
 
 # Results
 
+Table \@ref(tab:modprftab)
+
 # Discussion
 
 # Conclusions
@@ -254,5 +257,47 @@ cap.val <- 'Summary and details for each of the GAM structures in equations \\@r
 knitr::kable(tab, booktabs = T, caption = cap.val)
 ```
 
+```{r modprftab, tab.cap = "Model performance statistics for each station and GAM structure (Table \\@ref(tab:modsumtab)).  Four GAMs were fit to each station and performance is summarized as $\\Delta$ AIC (from `gam0`), GCV, and R-squared values.  Models with the lowest AIC, GCV and highest R-squared values for each station are emphasized."}
+totab <- modprf %>% 
+  group_by(station) %>% 
+  mutate(
+    AIC = AIC - max(AIC),
+    minaic = AIC == min(AIC), 
+    mingcv = GCV == min(GCV),
+    maxr2 = R2 == max(R2)
+  ) %>% 
+  ungroup
+
+boldaic <- as.numeric(rownames(totab)[totab$minaic])
+boldgcv <- as.numeric(rownames(totab)[totab$mingcv])
+boldr2 <- as.numeric(rownames(totab)[totab$maxr2])
+
+totab <- totab %>% 
+  select(-minaic, -mingcv, -maxr2) %>% 
+  mutate(
+    station = ifelse(duplicated(station), '', station)
+  ) 
+
+tab <- flextable(totab) %>% 
+  set_header_labels(
+    station = 'Station', 
+    model = 'GAM', 
+    AIC = 'Delta AIC',
+    R2 = 'R-squared'
+  ) %>% 
+  colformat_num(j = 3, digits = 1) %>%
+  colformat_num(j = c(4, 5), digits = 2) %>% 
+  bold(i = boldaic, j = 'AIC') %>% 
+  bold(i = boldgcv, j = 'GCV') %>% 
+  bold(i = boldr2, j = 'R2') %>% 
+  border_remove() %>% 
+  hline_top(border = fp_border(color = 'black')) %>% 
+  font(fontname = 'Times', part = 'all') %>%
+  font(j = 2, fontname = 'Consolas') %>% 
+  fontsize(size = 12, part = 'all') %>% 
+  autofit()
+
+tab
+```
 
 # References
