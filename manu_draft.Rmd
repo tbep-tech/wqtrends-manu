@@ -18,10 +18,18 @@ knitr::opts_chunk$set(fig.path = 'figs/', warning = F, message = F, echo = F, ca
   x2 = sub('-\\d+([.][a-z]+)$', '\\1', x)
   if (file.rename(x, x2)) x2 else x
   })
+
 # libraries
 library(Jabbrev)
 library(tidyverse)
 library(wqtrends)
+library(flextable)
+library(officer)
+
+data(locs)
+
+locs <- locs %>% 
+  rename(station = Station)
 
 # # extract bib entries from online
 # bib_scrp('manu_draft.Rmd', 'refs.bib')
@@ -47,7 +55,7 @@ The San Francisco Estuary (SFE) is the largest estuary on the Pacific Coast of N
 
 Nitrogen and phospohorus levels in SFE generally exceed concentrations that have been observed to promote excess primary production in other large estuarine systems.  However, eutrophic conditions have not been regularly observed since routine monitoring began in the 1970s.  The resistance of SFE to eutrophication has been attributed to several factors, including elevated suspended sediments that reduce light penetration in the water column, regular exchange and mixing with low-nutrient marine waters and export of estuarine nutrients to the Pacific Ocean, and benthic grazing by filter-feeding bivalves that reduce algal concentrations.  Renewed interest in the potential for nutrient loading to negatively affect water quality has occurred recently, particularly in South Bay, where harmful algal blooms (HABs), increases in summer-fall chlorophyll concentrations, and low dissolved oxygen concentrations were observed beginning in 1999.  These relatively recent occurrrences motivated the San Francisco Regional Water Quality Control Board and stakeholders to establish a Nutrient Management Strategy, with the purpose, among others, to develop a framework for assessing water quality condition.  Critical questions that were to be addressed by the NMS included identifying water quality conditions to be considered healthy and protective of beneficial uses, how do current conditions compare to desirable water quality conditions, and what potential management actions are needed to achieve desired conditions if they currently do not persist.  Although visual changes in observed data were apparent, statistical analyses to quantify current status and to provide estimates of annual and seasonal trends with appropriate bounds on uncertainty have not been sufficiently developed. 
 
-The SFE Research Program of the US Geological Survey has been collecting water quality data at fixed locations in the bay since 1969 [@Cloern16;@Schraga20].  This dataset is one of the longest continuous monitoring datasets available in a North American estuary and includes at least monthly sampling at 37 fixed sampling locations along a 145 km longitudinal transect from the lower Sacramento River in the Delta to lower South Bay.  Water quality constituent measurements available for each station include salinity, temperature, light attenuation, chlorophyll-a, dissolved oxygen, suspended particulate matter, and dissolved inorganic nutrients. The current analysis focused on near-surface chlorophyll-a data collected biweekly to monthly along the South Bay axis extending from Central Bay (stations 18-23), South Bay (stations 24-32), and Lower South Bay (stations 34-36). Discrete chlorophyll concentrations at each station were determined by fluoremetric analysis with 90% acetone pigment extraction on GFF filters. Data collected between 1990-2017 were selected for analysis because it represented a suitable balance among three factors relevant to testing the statistical approaches, including sufficient length of record, consistent biweekly-monthly sampling, and a diverse set of stations covering the salinity gradient across multiple subembayments.  While sampling frequency varied somewhat over time or by station, all data were treated as unique time series within the statistical models (i.e., no spatial or temporal binning or averaging was done).
+The SFE Research Program of the US Geological Survey has been collecting water quality data at fixed locations in the bay since 1969 [@Cloern16;@Schraga20].  This dataset is one of the longest continuous monitoring datasets available in a North American estuary and includes at least monthly sampling at 37 fixed sampling locations along a 145 km longitudinal transect from the lower Sacramento River in the Delta to lower South Bay.  Water quality constituent measurements available for each station include salinity, temperature, light attenuation, chlorophyll-a, dissolved oxygen, suspended particulate matter, and dissolved inorganic nutrients. The current analysis focused on near-surface chlorophyll-a data collected biweekly to monthly along the South Bay axis extending from Central Bay (stations 18-23), South Bay (stations 24-32), and Lower South Bay (stations 34-36) (Table \@ref(tab:sumtab)). Discrete chlorophyll concentrations at each station were determined by fluoremetric analysis with 90% acetone pigment extraction on GFF filters. Data collected between 1990-2017 were selected for analysis because it represented a suitable balance among three factors relevant to testing the statistical approaches, including sufficient length of record, consistent biweekly-monthly sampling, and a diverse set of stations covering the salinity gradient across multiple subembayments.  While sampling frequency varied somewhat over time or by station, all data were treated as unique time series within the statistical models (i.e., no spatial or temporal binning or averaging was done).
 
 ## GAM application
 
@@ -180,6 +188,49 @@ p1
 
 # Tables
 
+
+```{r sumtab, tab.cap = 'Station locations, sample sizes, and median values for salnity, dissolved inorganic nitrogen (DIN, sum of ammonia, nitrate, and nitrite), and chlorophyll.  Rows are arranged from north to south.'}
+totab <- rawdat %>% 
+  filter(param %in% c('sal', 'din', 'chl')) %>% 
+  group_by(station, param) %>% 
+  summarise(
+    n = n(), 
+    medv = median(value, na.rm = T)
+  ) %>% 
+  ungroup() %>% 
+  gather('var', 'val', n, medv) %>% 
+  unite('var', param, var) %>% 
+  mutate(var = factor(var, levels = c('sal_n', 'sal_medv', 'din_n', 'din_medv', 'chl_n', 'chl_medv'))) %>% 
+  left_join(locs, by = 'station') %>% 
+  spread(var, val)
+
+tab <- flextable(totab) %>% 
+  set_header_labels(
+    station = 'Station', 
+    lat = 'Latitude', 
+    lon = 'Longitude', 
+    sal_n = 'n', 
+    sal_medv = 'Med.', 
+    din_n = 'n', 
+    din_medv = 'Med.', 
+    chl_n = 'n', 
+    chl_medv = 'Med.'
+  ) %>% 
+  add_header_row(values = c('', '', '', 'Salinity (psu)', '', 'DIN (mg/L)', '', 'Chl-a (ug/L)', '')) %>% 
+  merge_at(i = 1, j = 4:5, part = 'header') %>% 
+  merge_at(i = 1, j = 6:7, part = 'header') %>% 
+  merge_at(i = 1, j = 8:9, part = 'header') %>% 
+  colformat_num(j = c(5, 7, 9), digits = 1) %>%
+  colformat_num(j = c(2, 3), digits = 3) %>% 
+  align(align = 'right', part = 'header') %>% 
+  border_remove() %>% 
+  hline_top(border = fp_border(color = 'black')) %>% 
+  font(fontname = 'Times', part = 'all') %>%
+  fontsize(size = 12, part = 'all') %>% 
+  width(j = c(2, 3), width = 0.9) 
+tab
+```
+
 ```{r modsumtab}
 tab <- tibble(
   GAM = c('`gam0`', '`gam1`', '`gam2`', '`gam6`'),
@@ -202,5 +253,6 @@ cap.val <- 'Summary and details for each of the GAM structures in equations \\@r
 # table
 knitr::kable(tab, booktabs = T, caption = cap.val)
 ```
+
 
 # References
