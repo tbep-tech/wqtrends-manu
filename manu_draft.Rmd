@@ -257,7 +257,7 @@ cap.val <- 'Summary and details for each of the GAM structures in equations \\@r
 knitr::kable(tab, booktabs = T, caption = cap.val)
 ```
 
-```{r modprftab, tab.cap = "Model performance statistics for each station and GAM structure (Table \\@ref(tab:modsumtab)).  Four GAMs were fit to each station and performance is summarized as $\\Delta$ AIC (from `gam0`), GCV, and R-squared values.  Models with the lowest AIC, GCV and highest R-squared values for each station are emphasized."}
+```{r modprftab, tab.cap = 'Model performance statistics for each station and GAM structure (Table \\@ref(tab:modsumtab)).  Four GAMs were fit to each station and performance is summarized as $\\Delta$ AIC (from `gam0`), GCV, and R-squared values.  Models with the lowest AIC, GCV and highest R-squared values for each station are emphasized. Probability values ("P-value") show the results of Analysis of Variance comparisons between all models at a station.  The p-value for a row refers to the comparison of the model in the current row to the one preceeding.  Values indicate ns for not significantly different at $\\alpha = 0.05$, * $p< 0.05$, and ** $p < 0.005$.'}
 totab <- modprf %>% 
   group_by(station) %>% 
   mutate(
