@@ -28,6 +28,9 @@ library(officer)
 
 data(locs)
 data(modprf)
+data(seastrnd)
+
+source('R/funcs.R')
 
 locs <- locs %>% 
   rename(station = Station)
@@ -151,7 +154,7 @@ Each of the four GAM structures were used to fit models to the chlorophyll time 
 
 # Results
 
-Table \@ref(tab:modprftab)
+Table \@ref(tab:modprftab), Table \@ref(tab:seastrndtab)
 
 # Discussion
 
@@ -241,13 +244,13 @@ tab <- tibble(
     'Linear trend with seasonality', 
     'Nonlinear trends seasonality (constrained knots)', 
     'Nonlinear trends wiht seasonality, plus interaction',
-    'Nonelinear trends with seasonality (unconstrained knots)'
+    'Nonlinear trends with seasonality (unconstrained knots)'
   ),
   Details = c(
-    'A linear trend in time over the course of the time series (cyear); and Within-year seasonal fluctuations that follow the same pattern every year - e.g. large spring bloom and small fall bloom (`s(doy, bs = "cc")`)',
-    'Treats cyear and doy same as gam0; and A smooth non-linear trend through time, such that the seasonal peaks are similar across years, but interannual change is evident', 
-    'Treats cyear and doy same as gam1; and Within-year seasonal fluctuations that vary across years but in a constrained pattern compared to gam6 (`ti(year, doy, bs = c("tp", "cc"))`)', 
-    'Variant of gam1 with much higher values of k, allowing the splines to follow greater fluctuations both within and across years.')
+    'A linear trend in time over the course of the time series (year); and Within-year seasonal fluctuations that follow the same pattern every year, e.g., large spring bloom and small fall bloom (`s(doy, bs = "cc")`)',
+    'Treats year and doy same as `gam0`; and A smooth non-linear trend through time, such that the seasonal peaks are similar across years, but interannual change is evident', 
+    'Treats cyear and doy same as `gam1`; and Within-year seasonal fluctuations that vary across years but in a constrained pattern compared to `gam6` (`ti(year, doy, bs = c("tp", "cc"))`)', 
+    'Variant of `gam1` with much higher values of k, allowing the splines to follow greater fluctuations both within and across years.')
   )
 
 # table stuff
@@ -257,7 +260,7 @@ cap.val <- 'Summary and details for each of the GAM structures in equations \\@r
 knitr::kable(tab, booktabs = T, caption = cap.val)
 ```
 
-```{r modprftab, tab.cap = 'Model performance statistics for each station and GAM structure (Table \\@ref(tab:modsumtab)).  Four GAMs were fit to each station and performance is summarized as $\\Delta$ AIC (from `gam0`), GCV, and R-squared values.  Models with the lowest AIC, GCV and highest R-squared values for each station are emphasized. Probability values ("P-value") show the results of Analysis of Variance comparisons between all models at a station.  The p-value for a row refers to the comparison of the model in the current row to the one preceeding.  Values indicate ns for not significantly different at $\\alpha = 0.05$, * $p< 0.05$, and ** $p < 0.005$.'}
+```{r modprftab, tab.cap = 'Model performance statistics for each station and GAM structure (Table \\@ref(tab:modsumtab)).  Four GAMs were fit to each station and performance is summarized as $\\Delta$ AIC (from `gam0`), GCV, and R-squared values.  Models with the lowest AIC, GCV and highest R-squared values for each station are emphasized. Probability values ("P-value") show the results of Analysis of Variance comparisons between all models at a station.  The p-value for a row refers to the comparison of the model in the current row to the one preceeding (`gam0` is the base model and does not have a p-value).  A significant p-value indicates the model in the current row provides a statistically significant difference in explaining chlorophyll variance from the model in the preceding row.  Values indicate ns for not significantly different at $\\alpha = 0.05$, * $p< 0.05$, and ** $p < 0.005$.'}
 totab <- modprf %>% 
   group_by(station) %>% 
   mutate(
@@ -297,6 +300,43 @@ tab <- flextable(totab) %>%
   fontsize(size = 12, part = 'all') %>% 
   autofit()
 
+tab
+```
+
+```{r seastrndtab, tab.cap = 'Seasonal trends from `gam6` results by station and decade.  Results show the annual slope estimate as chlorophyll change per year for each seasonal period across years (JFM: January, February, March; AMJ: April, May, June; JAS: July, August, September, OND: October, November, December).  Significant trends based on mixed-meta regression analysis are indicated with asterisks at $\\alpha = 0.05$, * $p< 0.05$, and ** $p < 0.005$.'}
+totab <- seastrnd %>% 
+  mutate(
+    pval = p_ast(pval),
+    pval = gsub('ns', '', pval), 
+    yrcoef = round(yrcoef, 2)
+    ) %>% 
+  unite('yrcoef', yrcoef, pval, sep = '') %>% 
+  spread(seas, yrcoef) %>% 
+  mutate(
+    station = ifelse(duplicated(station), '', station)
+  )
+
+boldjfm <- grep('\\*', totab$JFM)
+boldamj <- grep('\\*', totab$AMJ)
+boldjas <- grep('\\*', totab$JAS)
+boldond <- grep('\\*', totab$OND)
+
+tab <- flextable(totab) %>% 
+  set_header_labels(
+    station = 'Station', 
+    yrs = 'Years'
+  ) %>% 
+  add_header_row(values = c('', '', 'Chlorophyll change (ug/l) per year', '', '', '')) %>% 
+  merge_at(i = 1, j = 3:6, part = 'header') %>% 
+  bold(i = boldjfm, j = 'JFM') %>% 
+  bold(i = boldamj, j = 'AMJ') %>% 
+  bold(i = boldjas, j = 'JAS') %>% 
+  bold(i = boldond, j = 'OND') %>% 
+  border_remove() %>% 
+  hline_top(border = fp_border(color = 'black')) %>% 
+  font(fontname = 'Times', part = 'all') %>%
+  fontsize(size = 12, part = 'all') %>%   
+  width(j = c(2), width = 1) 
 tab
 ```
 
