@@ -25,6 +25,10 @@ library(tidyverse)
 library(wqtrends)
 library(flextable)
 library(officer)
+library(ggmap)
+library(sf)
+library(ggsn)
+library(USAboundaries)
 
 data(locs)
 data(modprf)
@@ -59,7 +63,7 @@ The San Francisco Estuary (SFE) is the largest estuary on the Pacific Coast of N
 
 Nitrogen and phospohorus levels in SFE generally exceed concentrations that have been observed to promote excess primary production in other large estuarine systems.  However, eutrophic conditions have not been regularly observed since routine monitoring began in the 1970s.  The resistance of SFE to eutrophication has been attributed to several factors, including elevated suspended sediments that reduce light penetration in the water column, regular exchange and mixing with low-nutrient marine waters and export of estuarine nutrients to the Pacific Ocean, and benthic grazing by filter-feeding bivalves that reduce algal concentrations.  Renewed interest in the potential for nutrient loading to negatively affect water quality has occurred recently, particularly in South Bay, where harmful algal blooms (HABs), increases in summer-fall chlorophyll concentrations, and low dissolved oxygen concentrations were observed beginning in 1999.  These relatively recent occurrrences motivated the San Francisco Regional Water Quality Control Board and stakeholders to establish a Nutrient Management Strategy, with the purpose, among others, to develop a framework for assessing water quality condition.  Critical questions that were to be addressed by the NMS included identifying water quality conditions to be considered healthy and protective of beneficial uses, how do current conditions compare to desirable water quality conditions, and what potential management actions are needed to achieve desired conditions if they currently do not persist.  Although visual changes in observed data were apparent, statistical analyses to quantify current status and to provide estimates of annual and seasonal trends with appropriate bounds on uncertainty have not been sufficiently developed. 
 
-The SFE Research Program of the US Geological Survey has been collecting water quality data at fixed locations in the bay since 1969 [@Cloern16;@Schraga20].  This dataset is one of the longest continuous monitoring datasets available in a North American estuary and includes at least monthly sampling at 37 fixed sampling locations along a 145 km longitudinal transect from the lower Sacramento River in the Delta to lower South Bay.  Water quality constituent measurements available for each station include salinity, temperature, light attenuation, chlorophyll-a, dissolved oxygen, suspended particulate matter, and dissolved inorganic nutrients. The current analysis focused on near-surface chlorophyll-a data collected biweekly to monthly along the South Bay axis extending from Central Bay (stations 18-23), South Bay (stations 24-32), and Lower South Bay (stations 34-36) (Table \@ref(tab:sumtab)). Discrete chlorophyll concentrations at each station were determined by fluoremetric analysis with 90% acetone pigment extraction on GFF filters. Data collected between 1990-2017 were selected for analysis because it represented a suitable balance among three factors relevant to testing the statistical approaches, including sufficient length of record, consistent biweekly-monthly sampling, and a diverse set of stations covering the salinity gradient across multiple subembayments.  While sampling frequency varied somewhat over time or by station, all data were treated as unique time series within the statistical models (i.e., no spatial or temporal binning or averaging was done).
+The SFE Research Program of the US Geological Survey has been collecting water quality data at fixed locations in the bay since 1969 [@Cloern16;@Schraga20] (Figure \@ref(fig:sitemap)).  This dataset is one of the longest continuous monitoring datasets available in a North American estuary and includes at least monthly sampling at 37 fixed sampling locations along a 145 km longitudinal transect from the lower Sacramento River in the Delta to lower South Bay.  Water quality constituent measurements available for each station include salinity, temperature, light attenuation, chlorophyll-a, dissolved oxygen, suspended particulate matter, and dissolved inorganic nutrients. The current analysis focused on near-surface chlorophyll-a data collected biweekly to monthly along the South Bay axis extending from Central Bay (stations 18-23), South Bay (stations 24-32), and Lower South Bay (stations 34-36) (Table \@ref(tab:sumtab), Figure \@ref(fig:sitemap)). Discrete chlorophyll concentrations at each station were determined by fluoremetric analysis with 90% acetone pigment extraction on GFF filters. Data collected between 1990-2017 were selected for analysis because it represented a suitable balance among three factors relevant to testing the statistical approaches, including sufficient length of record, consistent biweekly-monthly sampling, and a diverse set of stations covering the salinity gradient across multiple subembayments.  While sampling frequency varied somewhat over time or by station, all data were treated as unique time series within the statistical models (i.e., no spatial or temporal binning or averaging was done).
 
 ## GAM application
 
@@ -164,6 +168,64 @@ Table \@ref(tab:modprftab), Table \@ref(tab:seastrndtab)
 
 # Figures
 
+```{r, results = 'hide', message = F}
+# station locations
+sflocs <- locs %>% 
+  st_as_sf(coords = c('lon', 'lat'), crs = 4326)
+
+# for inset
+states <- us_states() %>% 
+  filter(!name %in% c('Alaska', 'Hawaii', 'Puerto Rico'))
+castate <- states %>% 
+  filter(name %in% 'California')
+locbuff <- st_buffer(sflocs, dist = 0.1)
+locbuff2 <- st_buffer(sflocs, dist = 0.07)
+insetbb <- st_buffer(sflocs, dist = 1.5) %>% 
+  st_bbox() %>% 
+  st_as_sfc(crs = 4326)
+
+# basemap
+dat_ext <- unname(st_bbox(locbuff))
+bsmap1 <- get_stamenmap(bbox = dat_ext, maptype = 'terrain-background', zoom = 11)
+
+# change opacity of basemap
+mapatt <- attributes(bsmap1)
+bsmap1_transparent <- matrix(adjustcolor(bsmap1, 
+                                                alpha.f = 0.75), 
+                                    nrow = nrow(bsmap1))
+attributes(bsmap1_transparent) <- mapatt
+
+# basemape plus stations
+p1 <- ggmap(bsmap1_transparent) +
+  geom_sf(data = sflocs, inherit.aes = F, col = 'black', pch = 21, fill = 'grey', size = 4) + 
+  geom_text(data = locs, aes(x = lon + 0.02, y = lat + 0.02, label = station), fontface = 'bold.italic') + 
+  theme(
+    axis.title = element_blank()
+  ) + 
+  north(locbuff, scale = 0.15, symbol = 10, location = 'bottomright') +
+  scalebar(locbuff2, dist = 10, dist_unit = 'km', location = 'bottomleft', transform = T, 
+           st.color = 'black', border.size = 0.5, st.dist = 0.02, st.size = 4) 
+
+# inset
+p2 <- ggplot() + 
+  geom_sf(data = states, fill = 'white', colour = 'black') + 
+  geom_sf(data = castate, fill = 'grey', colour = 'black') + 
+  geom_sf(data = insetbb, fill = NA, color = 'blue', size = 2) +
+  theme_void()
+
+# final map
+p <- p1 + 
+  inset(ggplotGrob(p2), xmin = -122.3, xmax = -121.97, ymin = 37.75, ymax = 37.95)
+
+# save as png
+png('figs/sitemap.png', height = 1800, width = 1400, family = 'serif', res = 300)
+print(p)
+dev.off()
+```
+```{r sitemap, fig.cap = 'Station locations in the central and south San Francisco Estuary used for analysis.  See Table \\@ref(tab:sumtab) for station descriptions.  Full dataset described in @Schraga20.'}
+knitr::include_graphics('figs/sitemap.png')
+```
+
 ```{r modsumfig, fig.height = 4.5, fig.width = 6, fig.cap = "General output for each of the four GAM structures in equations \\@ref(eq:gamzero) to \\@ref(eq:gamsix).  Day of year (Julian) is on the x-axis and each curve represents a different fitted year for chlorophyll concentration."}
 # get predictions for all four gams
 tomod <- rawdat %>%
@@ -191,9 +253,7 @@ p1 <- show_prddoy(mods = mods, ylab = 'Chlorophyll-a (ug/L)', nfac = 2, size = 0
 p1
 ```
 
-
 # Tables
-
 
 ```{r sumtab, tab.cap = 'Station locations, sample sizes, and median values for salnity, dissolved inorganic nitrogen (DIN, sum of ammonia, nitrate, and nitrite), and chlorophyll.  Rows are arranged from north to south.'}
 totab <- rawdat %>% 
