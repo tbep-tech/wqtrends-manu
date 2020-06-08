@@ -30,10 +30,17 @@ library(sf)
 library(ggsn)
 library(USAboundaries)
 library(hrbrthemes)
+library(patchwork)
+library(lubridate)
+library(colorspace)
 
 data(locs)
 data(modprf)
 data(seastrnd)
+data(mods_chl18)
+data(mods_chl24)
+data(mods_chl27)
+data(mods_chl32)
 
 source('R/funcs.R')
 
@@ -159,7 +166,7 @@ Each of the four GAM structures were used to fit models to the chlorophyll time 
 
 # Results
 
-Table \@ref(tab:modprftab), Table \@ref(tab:seastrndtab)
+Table \@ref(tab:modprftab), Table \@ref(tab:seastrndtab), Figure \@ref(fig:prddat)
 
 # Discussion
 
@@ -199,7 +206,7 @@ p1 <- ggplot(toplo1, aes(x = yr, y = value, fill = Median, group = yr)) +
   geom_violin(draw_quantiles = 0.5)  + 
   scale_fill_gradientn(colours = cls1) + 
   scale_y_log10() +
-  theme_ipsum(base_family = 'serif') +
+  theme_minimal(base_family = 'serif') +
   theme(
     axis.title.x = element_blank()
   ) +
@@ -211,7 +218,7 @@ p1 <- ggplot(toplo1, aes(x = yr, y = value, fill = Median, group = yr)) +
 p2 <- ggplot(toplo2, aes(x = mo, y = value, fill = yrcat)) + 
   geom_violin(draw_quantiles = 0.5)  + 
   scale_y_log10(ylab) +
-  theme_ipsum(base_family = 'serif') +
+  theme_minimal(base_family = 'serif') +
   scale_fill_manual(values = cls2) +
   theme(
     legend.title = element_blank(), 
@@ -223,11 +230,11 @@ p2 <- ggplot(toplo2, aes(x = mo, y = value, fill = yrcat)) +
   )
 
 p <- p1 + p2 + plot_layout(ncol = 1)
-png('figs/obsdat.png', height = 8, width = 9, family = 'serif', units = 'in', res = 400)
+png('figs/obsdat.png', height = 8, width = 8, family = 'serif', units = 'in', res = 400)
 print(p)
 dev.off()
 ```
-```{r obsdat, fig.cap = "Observed chlorophyll concentrations for all stations in Central and South SFE (18-36, Figure \\@ref(fig:sitemap)), with (a) annual summer/fall concentrations (Aug - Dec) and (b) monthly concentrations by decade."}
+```{r obsdat, fig.cap = "Observed chlorophyll concentrations for all stations in central and south San Francisco Estuary (18-36, Figure \\@ref(fig:sitemap)), with (a) annual summer/fall concentrations (Aug - Dec) and (b) monthly concentrations by decade."}
 knitr::include_graphics('figs/obsdat.png')
 ```
 
@@ -319,6 +326,102 @@ dev.off()
 ```
 ```{r modsumfig, fig.cap = "General output for each of the four GAM structures in equations \\@ref(eq:gamzero) to \\@ref(eq:gamsix).  Day of year (Julian) is on the x-axis and each curve represents a different fitted year for chlorophyll concentration."}
 knitr::include_graphics('figs/modsumfig.png')
+```
+
+```{r, results = 'hide', message = F}
+# get predictions to plot
+prdplo <- bind_rows(mods_chl18, mods_chl24, mods_chl27, mods_chl32) %>% 
+  mutate(prddat = pmap(list(data, modi), function(data, modi){
+
+    prddat <- data.frame(
+        dec_time = seq(min(data$dec_time), max(data$dec_time), length = 1000)
+      ) %>%
+      mutate(
+        date = date_decimal(dec_time),
+        date = as.Date(date),
+        mo = month(date, label = TRUE),
+        doy = yday(date),
+        yr = year(date)
+      )
+    
+    prd <- predict(modi, newdata = prddat) %>% 
+      as.numeric
+    
+    annprd <- predict(modi, newdata = prddat, type = 'terms')
+    int <- attr(annprd, 'constant')
+    value <- rowSums(annprd) + int
+    annvalue <- rowSums(annprd[, !grepl('doy', colnames(annprd)), drop = FALSE]) + int
+    annvalue <- as.numeric(annvalue)
+    
+    trans <- unique(modi$trans)
+    
+    if(!inherits(trans, 'numeric'))
+      stop('log used')
+    
+    prddat <- prddat %>% 
+      mutate(
+        chl = prd,
+        chl = forecast::InvBoxCox(chl, trans), 
+        annchl = forecast::InvBoxCox(annvalue, trans)
+        )
+    
+    return(prddat)
+    
+  })) %>% 
+  select(station, modi = model, prddat) %>% 
+  unnest(prddat) 
+
+ylab <- expression(paste("Chlorophyll-a (", mu, "g ", L^-1, ")"))
+
+toplo <- prdplo %>% 
+  filter(yr >= 1991)
+
+obsdat <- rawdat %>% 
+  filter(station %in% c(18, 24, 27, 32)) %>% 
+  filter(param == 'chl') %>% 
+  filter(yr >= 1991) %>% 
+  rename(chl = value)
+
+colpal <- "PuBuGn"
+
+p1 <- ggplot(toplo, aes(x = date, y = chl)) + 
+  geom_point(data = obsdat, color = 'grey', size = 0.15) + 
+  geom_line(size = 0.5) +
+  geom_line(aes(y = annchl), color = 'tomato1', size = 0.5, alpha = 0.9) +
+  theme_minimal(base_family = 'serif') + 
+  theme(
+    legend.position = 'right', 
+    legend.title = element_blank(), 
+    # axis.text.x= element_text(size = 8)
+    strip.background = element_blank()
+  ) + 
+  facet_grid(modi ~ station) +
+  scale_y_log10(limits = c(0.74, 83)) + 
+  labs(x = 'Date', subtitle = '(a) Model predictions with annual estimates', y = ylab)
+
+p2 <- ggplot(toplo, aes(x = doy, colour = yr, group = factor(yr))) + 
+  geom_line(aes(y = chl)) + 
+  theme_minimal(base_family = 'serif') + 
+  theme(
+    legend.position = 'right', 
+    legend.title = element_blank(), 
+    # axis.text.x= element_text(size = 8)
+    strip.background = element_blank()
+  ) + 
+  scale_colour_continuous_sequential(palette = colpal, rev = T, begin = 0.2) +
+  guides(colour = guide_colourbar(barheight = 10, barwidth = 1)) +
+  facet_grid(modi ~ station) +
+  scale_y_log10() + 
+  labs(x = 'Day of year', subtitle = '(b) Model predictions by day of year', y = ylab)
+
+p <- p1 + p2 + plot_layout(ncol = 1)
+
+png('figs/prddat.png', height = 10, width = 9, family = 'serif', units = 'in', res = 400)
+print(p)
+dev.off()
+```
+```{r prddat, fig.cap = "GAM predictions for select stations from north to south (18, 24, 27, 32) for models in equations \\@ref(eq:gamzero) to \\@ref(eq:gamsix). The results show (a) predictions across the time series with annual estimates (red line) and (b) predictions by day of year with one smooth per year.  Observed data in (a) are shown with the gray points. Station locations are in Figure \\@ref(fig:sitemap)."}
+knitr::include_graphics('figs/prddat.png')
 ```
 
 # Tables
