@@ -41,6 +41,7 @@ data(mods_chl18)
 data(mods_chl24)
 data(mods_chl27)
 data(mods_chl32)
+data(mods_chl34)
 
 source('R/funcs.R')
 
@@ -166,7 +167,7 @@ Each of the four GAM structures were used to fit models to the chlorophyll time 
 
 # Results
 
-Table \@ref(tab:modprftab), Table \@ref(tab:seastrndtab), Figure \@ref(fig:prddat)
+Table \@ref(tab:modprftab), Table \@ref(tab:seastrndtab), Figure \@ref(fig:prddat), Figure \@ref(fig:trnddat)
 
 # Discussion
 
@@ -422,6 +423,81 @@ dev.off()
 ```
 ```{r prddat, fig.cap = "GAM predictions for select stations from north to south (18, 24, 27, 32) for models in equations \\@ref(eq:gamzero) to \\@ref(eq:gamsix). The results show (a) predictions across the time series with annual estimates (red line) and (b) predictions by day of year with one smooth per year.  Observed data in (a) are shown with the gray points. Station locations are in Figure \\@ref(fig:sitemap)."}
 knitr::include_graphics('figs/prddat.png')
+```
+
+```{r, results = 'hide', message = F}
+toplo <- mods_chl34 %>% 
+  filter(model %in% 'gam6') %>% 
+  pull(modi)
+
+ylim <- c(-1, 19)
+ylab <- expression(paste("Chlorophyll-a (", mu, "g ", L^-1, ")"))
+
+p1 <- show_perchg(mods = toplo, baseyr = 1991, testyr = 2000, ylab = ylab) +
+  labs(
+    subtitle = '(a) 1990, 2000, Base: 3.6, Test: 5.7,\nChange: 57.7%, ns', 
+    title = NULL
+  )
+p2 <- show_perchg(mods = toplo, baseyr = 2000, testyr = 2010, ylab = NULL) +
+  labs(
+    subtitle = '(b) 2000, 2010, Base: 5.7, Test: 10.1,\nChange: 77.5%, p < 0.001', 
+    title = NULL
+  )
+p3 <- show_perchg(mods = toplo, baseyr = 2010, testyr = 2017, ylab = NULL) +
+  labs(
+    subtitle = '(c) 2010, 2017, Base: 10.1, Test: 6.1,\nChange: -39.8%, p < 0.01', 
+    title = NULL
+  )
+p4 <- show_avgseason(mods = toplo, doystr = 41, doyend = 213, yrstr = 1991, yrend = 2000, ylab = ylab) +
+  scale_y_continuous(limits = ylim) + 
+  labs(
+    subtitle = '(d) 1990-2000, Jan-Jul, slope 0.6, p < 0.01', 
+    title = NULL
+  )
+p5 <- show_avgseason(mods = toplo, doystr = 41, doyend = 213, yrstr = 2000, yrend = 2010, ylab = NULL) +
+  scale_y_continuous(limits = ylim) + 
+  labs(
+    subtitle = '(e) 2000-2010, Jan-Jul, slope 0.5, ns', 
+    title = NULL
+  )
+p6 <- show_avgseason(mods = toplo, doystr = 41, doyend = 213, yrstr = 2010, yrend = 2016, ylab = NULL) +
+  scale_y_continuous(limits = ylim) + 
+  labs(
+    subtitle = '(f) 2010-2017, Jan-Jul, slope -0.4, ns', 
+    title = NULL
+  )
+p7 <- show_avgseason(mods = toplo, doystr = 213, doyend = 338, yrstr = 1991, yrend = 2000, ylab = ylab) +
+  scale_y_continuous(limits = ylim) + 
+  labs(
+    subtitle = '(g) 1990-2000, Aug-Dec, slope 0.26, ns', 
+    title = NULL
+  )
+p8 <- show_avgseason(mods = toplo, doystr = 213, doyend = 338, yrstr = 2000, yrend = 2010, ylab = NULL) +
+  scale_y_continuous(limits = ylim) + 
+  labs(
+    subtitle = '(h) 2000-2010, Aug-Dec, slope 0.56, p < 0.05', 
+    title = NULL
+  )
+p9 <- show_avgseason(mods = toplo, doystr = 213, doyend = 338, yrstr = 2010, yrend = 2017, ylab = NULL) +
+  scale_y_continuous(limits = ylim) + 
+  labs(
+    subtitle = '(i) 2010-2017, Aug-Dec, slope -0.52, ns', 
+    title = NULL
+  )
+
+p <- p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9 + plot_layout(nrow = 3) & 
+  theme_minimal(base_family = 'serif', base_size = 12) &
+  theme(
+    axis.title.x = element_blank(),
+    legend.position = 'none'
+    )
+
+png('figs/trnddat.png', height = 9, width = 11, family = 'serif', units = 'in', res = 400)
+print(p)
+dev.off()
+```
+```{r trnddat, fig.cap = "Examples of trend tests using results of GAM predictions for station 34 (`gam6`).  Plots (a), (b), and (c) show estimates of percent change as the difference of means between base and test years for chlorophyll.  Plots (d) through (i) show seasonal averages and trend estimates over time.  Plot (d), (e), and (f) show trend estimates for January through July and (g), (h), and (i) show trend estimates for August through December.  The trend lines in (d) through (i) estimate the rate of change of chlorophyll per year, reported as the slope in the plot title. ns: not significant"}
+knitr::include_graphics('figs/trnddat.png')
 ```
 
 # Tables
