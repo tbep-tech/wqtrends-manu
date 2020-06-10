@@ -37,6 +37,8 @@ library(colorspace)
 data(locs)
 data(modprf)
 data(seastrnd)
+data(seastrnd2)
+data(chgtrnd)
 data(mods_chl18)
 data(mods_chl24)
 data(mods_chl27)
@@ -167,7 +169,7 @@ Each of the four GAM structures were used to fit models to the chlorophyll time 
 
 # Results
 
-Table \@ref(tab:modprftab), Table \@ref(tab:seastrndtab), Figure \@ref(fig:prddat), Figure \@ref(fig:trnddat)
+Table \@ref(tab:modprftab), Table \@ref(tab:seastrndtab), Figure \@ref(fig:prddat), Figure \@ref(fig:trnddat), Figure \@ref(fig:trndmap)
 
 # Discussion
 
@@ -498,6 +500,81 @@ dev.off()
 ```
 ```{r trnddat, fig.cap = "Examples of trend tests using results of GAM predictions for station 34 (`gam6`).  Plots (a), (b), and (c) show estimates of percent change as the difference of means between base and test years for chlorophyll.  Plots (d) through (i) show seasonal averages and trend estimates over time.  Plot (d), (e), and (f) show trend estimates for January through July and (g), (h), and (i) show trend estimates for August through December.  The trend lines in (d) through (i) estimate the rate of change of chlorophyll per year, reported as the slope in the plot title. ns: not significant"}
 knitr::include_graphics('figs/trnddat.png')
+```
+
+```{r, results = 'hide', message = F}
+# change opacity of basemap
+mapatt <- attributes(bsmap1)
+bsmap1_transparent <- matrix(adjustcolor(bsmap1, 
+                                         alpha.f = 0.4), 
+                             nrow = nrow(bsmap1))
+attributes(bsmap1_transparent) <- mapatt
+
+leglab2 <- expression(paste("Chl-a change (", italic(mu), "g ", L^-1, yr^-1, ")"))
+
+pthm <- theme_bw(base_family = 'serif', base_size = 14) +
+  theme(
+    legend.position = 'top',
+    strip.background = element_blank(),
+    axis.title = element_blank(), 
+    axis.text = element_text(size = 7)
+  )
+
+toplo1 <- chgtrnd %>% 
+  mutate(
+    station = as.numeric(station),
+    pval = ifelse(pval == 'sig', '*', '')
+    ) %>% 
+  left_join(locs, by = 'station') %>% 
+  filter(model %in% 'gam6')
+
+toplo2 <- seastrnd2 %>%
+  mutate(
+    station = as.numeric(station),
+    pval = ifelse(pval < 0.05, '*', ''), 
+    coefsgn = sign(yrcoef), 
+    coefsgn = factor(coefsgn, levels = c('1', '-1'), labels = c('inc', 'dec'))
+  ) %>% 
+  left_join(locs, by = 'station')
+
+p1 <- ggmap(bsmap1_transparent) +
+  geom_point(data = toplo1, aes(x = lon, y = lat, size = abs(perchg), shape = persgn, fill = perchg, colour = pval)) + #, color = 'black') +
+  geom_text(data = toplo1, aes(x = lon, y = lat, label = pval), nudge_x = 0.04) + 
+  facet_grid( ~ yrs) + 
+  scale_fill_gradient2('Chl-a % change', low = 'green', mid = 'white',  high = 'tomato1', midpoint = 0) +
+  scale_colour_manual(values = c('black', 'black'), guide = F) +
+  coord_map() + 
+  scale_shape_manual('Trend', values = c(24, 25)) + 
+  pthm +
+  scale_size(range = c(1, 6), guide = F) +
+  guides(fill = guide_colourbar(barheight = 0.5, barwidth = 6)) +
+  labs(
+    subtitle = '(a) Percent change between year pairs'
+  )
+
+p2 <- ggmap(bsmap1_transparent) +
+  geom_point(data = toplo2, aes(x = lon, y = lat, size = abs(yrcoef), shape = coefsgn, fill = yrcoef, colour = pval)) + #, color = 'black') +
+  geom_text(data = toplo2, aes(x = lon, y = lat, label = pval), nudge_x = 0.04) + 
+  facet_grid(seas ~ yrs) + 
+  scale_fill_gradient2(leglab2, low = 'green', mid = 'white',  high = 'tomato1', midpoint = 0) +
+  scale_colour_manual(values = c('black', 'black'), guide = F) +
+  coord_map() + 
+  scale_shape_manual('Trend', values = c(24, 25)) + 
+  pthm +
+  scale_size(range = c(1, 6), guide = F) +
+  guides(fill = guide_colourbar(barheight = 0.5, barwidth = 6)) +
+  labs(
+    subtitle = '(b) Annual rates of change across seasons by decade'
+  )
+
+p <- p1 + p2 + plot_layout(ncol = 1, heights = c(0.5, 1)) 
+
+png('figs/trndmap.png', height = 10, width = 6.5, family = 'serif', units = 'in', res = 400)
+p
+dev.off()
+```
+```{r trndmap, fig.cap= "Trend estimates (a) between year pairs and (b) across seasons by decade for chlorophyll at each station.  The top plots show percent change comparing the first and last year within a decade and the bottom plots show seasonal estimates of change per year for chlorophyll concentrations for each decade.  Point type, shape, and color represent the direction and magnitude of an estimated trend.  Trends with $p<0.05$ are marked with an asterisk.  All results are from `gam6`."}
+knitr::include_graphics('figs/trndmap.png')
 ```
 
 # Tables
