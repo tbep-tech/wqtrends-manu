@@ -8,7 +8,7 @@ source('R/funcs.R')
 
 # model performance summaries ---------------------------------------------
 
-modprf <- list.files('data', pattern = '^mods\\_chl', full.names = T) %>% 
+modprf <- list.files('data', pattern = '^mods\\_chl|modslog\\_chl', full.names = T) %>% 
   enframe() %>% 
   group_by(value) %>% 
   nest %>% 
@@ -16,7 +16,7 @@ modprf <- list.files('data', pattern = '^mods\\_chl', full.names = T) %>%
     prf = purrr::map(value, function(x){
       
       load(file = x)
-      
+  
       nm <- basename(x)
       nm <- gsub('\\.RData', '', nm)
       
@@ -24,18 +24,26 @@ modprf <- list.files('data', pattern = '^mods\\_chl', full.names = T) %>%
         select(model, modi) %>% 
         deframe()
       
+      trans <- lapply(dat, function(x) x$trans) %>% 
+        enframe('model', 'trans') %>%
+        unnest('trans')
+        
       prf <- anlz_fit(mods = dat)
+
+      out <- trans %>% 
+        left_join(prf, by = 'model') %>% 
+        mutate(trans = ifelse(is.numeric(trans), as.character(round(trans, 2)), trans))
       
-      return(prf)
+      return(out)
       
     })
   ) %>% 
-  ungroup %>%
+  ungroup %>% 
   select(-data) %>% 
   unnest('prf') %>% 
   select(-k, -F) %>% 
   mutate(
-    value = gsub('^data/mods\\_chl|\\.RData$', '', value), 
+    value = gsub('^data/mods\\_chl|^data/modslog\\_chl$|\\.RData$', '', value), 
     p.value = p_ast(p.value), 
     p.value = ifelse(is.na(p.value), '-', p.value)
   ) %>% 
