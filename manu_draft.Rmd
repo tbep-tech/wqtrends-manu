@@ -647,44 +647,72 @@ cap.val <- 'Summary and details for each of the GAM structures in equations \\@r
 knitr::kable(tab, booktabs = T, caption = cap.val)
 ```
 
-```{r modprftab, tab.cap = 'Model performance statistics for each station and GAM structure (Table \\@ref(tab:modsumtab)).  Four GAMs were fit to each station and performance is summarized as $\\Delta$ AIC (from `gam0`), GCV, and R-squared values.  Models with the lowest AIC, GCV and highest R-squared values for each station are emphasized. Probability values ("P-value") show the results of Analysis of Variance comparisons between all models at a station.  The p-value for a row refers to the comparison of the model in the current row to the one preceeding (`gam0` is the base model and does not have a p-value).  A significant p-value indicates the model in the current row provides a statistically significant difference in explaining chlorophyll variance from the model in the preceding row.  Values indicate ns for not significantly different at $\\alpha = 0.05$, * $p< 0.05$, and ** $p < 0.005$.'}
+```{r modprftab, tab.cap = 'Model performance statistics for each station and GAM structure (Table \\@ref(tab:modsumtab)). Results are for models of chlorophyll-a using BoxCox and logarathmic transformations. Four GAMs were fit to each station and performance is summarized as $\\Delta$ AIC (from `gam0`),  $\\Delta$ GCV, and R-squared values.  Probability values ("P-val") show the results of Analysis of Variance comparisons between all BoxCox or logarithmic models at a station.  The p-value for a row refers to the comparison of the model in the current row to the one preceeding (`gam0` is the base model and does not have a p-value).  A significant p-value indicates the model in the current row provides a statistically significant difference in explaining chlorophyll variance from the model in the preceding row.  ns: not significant at $\\alpha = 0.05$, * $p< 0.05$, and ** $p < 0.005$.'}
+
 totab <- modprf %>% 
-  group_by(station) %>% 
+  gather('stat', 'val', AIC, GCV, R2, `P-value`) %>% 
+  mutate(trans = case_when(
+    trans != 'log10' ~ 'BoxCox', 
+    T ~ trans)
+  ) %>% 
+  unite('stat', trans, stat) %>% 
   mutate(
-    AIC = AIC - max(AIC),
-    minaic = AIC == min(AIC), 
-    mingcv = GCV == min(GCV),
-    maxr2 = R2 == max(R2)
+    stat = factor(stat, levels = c('BoxCox_AIC', 'log10_AIC', 'BoxCox_GCV', 'log10_GCV', 'BoxCox_R2', 'log10_R2', 'BoxCox_P-value', 'log10_P-value'))
+  ) %>% 
+  spread(stat, val) %>% 
+  mutate_at(c('BoxCox_AIC', 'log10_AIC', 'BoxCox_GCV', 'log10_GCV', 'BoxCox_R2', 'log10_R2'), as.numeric) %>% 
+  group_by(station) %>%
+  mutate(
+    BoxCox_AIC = BoxCox_AIC - max(BoxCox_AIC),
+    log10_AIC = log10_AIC - max(log10_AIC),
+    BoxCox_GCV = BoxCox_GCV - max(BoxCox_GCV),
+    log10_GCV = log10_GCV - max(log10_GCV)#,
+    # minaic = AIC == min(AIC), 
+    # mingcv = GCV == min(GCV),
+    # maxr2 = R2 == max(R2)
   ) %>% 
   ungroup
 
-boldaic <- as.numeric(rownames(totab)[totab$minaic])
-boldgcv <- as.numeric(rownames(totab)[totab$mingcv])
-boldr2 <- as.numeric(rownames(totab)[totab$maxr2])
+# boldaic <- as.numeric(rownames(totab)[totab$minaic])
+# boldgcv <- as.numeric(rownames(totab)[totab$mingcv])
+# boldr2 <- as.numeric(rownames(totab)[totab$maxr2])
 
 totab <- totab %>% 
-  select(-minaic, -mingcv, -maxr2) %>% 
+  # select(-minaic, -mingcv, -maxr2) %>% 
   mutate(
     station = ifelse(duplicated(station), '', station)
   ) 
 
 tab <- flextable(totab) %>% 
   set_header_labels(
-    station = 'Station', 
-    model = 'GAM', 
-    AIC = 'Delta AIC',
-    R2 = 'R-squared'
+    station = '', 
+    model = '', 
+    BoxCox_AIC = 'Delta AIC',
+    log10_AIC = 'Delta AIC',
+    BoxCox_GCV = 'Delta GCV',
+    log10_GCV = 'Delta GCV',
+    BoxCox_R2 = 'R-squared',
+    log10_R2 = 'R-squared',
+    `BoxCox_P-value` = 'P-val',
+    `log10_P-value` = 'P-val'
   ) %>% 
-  colformat_num(j = 3, digits = 1) %>%
-  colformat_num(j = c(4, 5), digits = 2) %>% 
-  bold(i = boldaic, j = 'AIC') %>% 
-  bold(i = boldgcv, j = 'GCV') %>% 
-  bold(i = boldr2, j = 'R2') %>% 
+  merge_at(i = 1, j = 3:4, part = "header") %>% 
+  merge_at(i = 1, j = 5:6, part = "header") %>% 
+  merge_at(i = 1, j = 7:8, part = "header") %>% 
+  merge_at(i = 1, j = 9:10, part = "header") %>% 
+  add_header_row(values = c('Station', 'GAM', 'BoxCox', 'Log', 'BoxCox', 'Log', 'BoxCox', 'Log', 'BoxCox', 'Log'), top = F) %>% 
+  align(j = c(3:10), align = 'center', part = 'all') %>% 
+  colformat_num(j = c(3, 4), digits = 1) %>%
+  colformat_num(j = c(5, 6), digits = 3) %>% 
+  colformat_num(j = c(7, 8), digits = 2) %>% 
+  # bold(i = boldaic, j = 'AIC') %>% 
+  # bold(i = boldgcv, j = 'GCV') %>% 
+  # bold(i = boldr2, j = 'R2') %>% 
   border_remove() %>% 
   hline_top(border = fp_border(color = 'black')) %>% 
   font(fontname = 'Times', part = 'all') %>%
   font(j = 2, fontname = 'Consolas') %>% 
-  fontsize(size = 12, part = 'all') %>% 
+  fontsize(size = 8, part = 'all') %>% 
   autofit()
 
 tab
@@ -726,5 +754,98 @@ tab <- flextable(totab) %>%
   width(j = c(2), width = 1) 
 tab
 ```
+
+# Supplement
+
+```{r modprfboxtab, tab.cap = 'Model performance statistics for each station and GAM structure (Table \\@ref(tab:modsumtab)). Results are for models of chlorophyll-a using BoxCox transformations. Four GAMs were fit to each station and performance is summarized as $\\Delta$ AIC (from `gam0`), GCV, and R-squared values.  Models with the lowest AIC, GCV and highest R-squared values for each station are emphasized. Probability values ("P-value") show the results of Analysis of Variance comparisons between all models at a station.  The p-value for a row refers to the comparison of the model in the current row to the one preceeding (`gam0` is the base model and does not have a p-value).  A significant p-value indicates the model in the current row provides a statistically significant difference in explaining chlorophyll variance from the model in the preceding row.  Values indicate ns for not significantly different at $\\alpha = 0.05$, * $p< 0.05$, and ** $p < 0.005$.'}
+totab <- modprf %>% 
+  filter(trans != 'log10') %>% 
+  select(-trans) %>% 
+  group_by(station) %>% 
+  mutate(
+    AIC = AIC - max(AIC),
+    minaic = AIC == min(AIC), 
+    mingcv = GCV == min(GCV),
+    maxr2 = R2 == max(R2)
+  ) %>% 
+  ungroup
+
+boldaic <- as.numeric(rownames(totab)[totab$minaic])
+boldgcv <- as.numeric(rownames(totab)[totab$mingcv])
+boldr2 <- as.numeric(rownames(totab)[totab$maxr2])
+
+totab <- totab %>% 
+  select(-minaic, -mingcv, -maxr2) %>% 
+  mutate(
+    station = ifelse(duplicated(station), '', station)
+  ) 
+
+tab <- flextable(totab) %>% 
+  set_header_labels(
+    station = 'Station', 
+    model = 'GAM', 
+    AIC = 'Delta AIC',
+    R2 = 'R-squared'
+  ) %>% 
+  colformat_num(j = 3, digits = 1) %>%
+  colformat_num(j = c(4, 5), digits = 2) %>% 
+  bold(i = boldaic, j = 'AIC') %>% 
+  bold(i = boldgcv, j = 'GCV') %>% 
+  bold(i = boldr2, j = 'R2') %>% 
+  border_remove() %>% 
+  hline_top(border = fp_border(color = 'black')) %>% 
+  font(fontname = 'Times', part = 'all') %>%
+  font(j = 2, fontname = 'Consolas') %>% 
+  fontsize(size = 12, part = 'all') %>% 
+  autofit()
+
+tab
+```
+
+```{r modprflogtab, tab.cap = 'Model performance statistics for each station and GAM structure (Table \\@ref(tab:modsumtab)). Results are for models of chlorophyll-a using logarithmic (base-10) ransformations. Four GAMs were fit to each station and performance is summarized as $\\Delta$ AIC (from `gam0`), GCV, and R-squared values.  Models with the lowest AIC, GCV and highest R-squared values for each station are emphasized. Probability values ("P-value") show the results of Analysis of Variance comparisons between all models at a station.  The p-value for a row refers to the comparison of the model in the current row to the one preceeding (`gam0` is the base model and does not have a p-value).  A significant p-value indicates the model in the current row provides a statistically significant difference in explaining chlorophyll variance from the model in the preceding row.  Values indicate ns for not significantly different at $\\alpha = 0.05$, * $p< 0.05$, and ** $p < 0.005$.'}
+totab <- modprf %>% 
+  filter(trans == 'log10') %>% 
+  select(-trans) %>% 
+  group_by(station) %>% 
+  mutate(
+    AIC = AIC - max(AIC),
+    minaic = AIC == min(AIC), 
+    mingcv = GCV == min(GCV),
+    maxr2 = R2 == max(R2)
+  ) %>% 
+  ungroup
+
+boldaic <- as.numeric(rownames(totab)[totab$minaic])
+boldgcv <- as.numeric(rownames(totab)[totab$mingcv])
+boldr2 <- as.numeric(rownames(totab)[totab$maxr2])
+
+totab <- totab %>% 
+  select(-minaic, -mingcv, -maxr2) %>% 
+  mutate(
+    station = ifelse(duplicated(station), '', station)
+  ) 
+
+tab <- flextable(totab) %>% 
+  set_header_labels(
+    station = 'Station', 
+    model = 'GAM', 
+    AIC = 'Delta AIC',
+    R2 = 'R-squared'
+  ) %>% 
+  colformat_num(j = 3, digits = 1) %>%
+  colformat_num(j = c(4, 5), digits = 2) %>% 
+  bold(i = boldaic, j = 'AIC') %>% 
+  bold(i = boldgcv, j = 'GCV') %>% 
+  bold(i = boldr2, j = 'R2') %>% 
+  border_remove() %>% 
+  hline_top(border = fp_border(color = 'black')) %>% 
+  font(fontname = 'Times', part = 'all') %>%
+  font(j = 2, fontname = 'Consolas') %>% 
+  fontsize(size = 12, part = 'all') %>% 
+  autofit()
+
+tab
+```
+
 
 # References

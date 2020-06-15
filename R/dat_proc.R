@@ -43,7 +43,7 @@ modprf <- list.files('data', pattern = '^mods\\_chl|modslog\\_chl', full.names =
   unnest('prf') %>% 
   select(-k, -F) %>% 
   mutate(
-    value = gsub('^data/mods\\_chl|^data/modslog\\_chl$|\\.RData$', '', value), 
+    value = gsub('^data/mods\\_chl|^data/modslog\\_chl|\\.RData$', '', value), 
     p.value = p_ast(p.value), 
     p.value = ifelse(is.na(p.value), '-', p.value)
   ) %>% 
