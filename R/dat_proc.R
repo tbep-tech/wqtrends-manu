@@ -22,12 +22,14 @@ modprf <- list.files('data', pattern = '^mods\\_chl|modslog\\_chl', full.names =
       
       dat <- get(nm) %>% 
         select(model, modi) %>% 
+        filter(model != 'gam0') %>% 
         deframe()
       
       trans <- lapply(dat, function(x) x$trans) %>% 
         enframe('model', 'trans') %>%
-        unnest('trans')
-        
+        unnest('trans') %>% 
+        filter(model != 'gam0')
+  
       prf <- anlz_fit(mods = dat)
 
       out <- trans %>% 
@@ -217,10 +219,11 @@ chgtrnd <- list.files('data', pattern = '^mods\\_chl', full.names = T) %>%
       
       nm <- basename(x)
       nm <- gsub('\\.RData', '', nm)
-      
+
       out <- get(nm) %>%  
         select(model, modi) %>% 
-        deframe()
+        filter(model != 'gam0') %>% 
+        deframe() 
       
       return(out)
       
