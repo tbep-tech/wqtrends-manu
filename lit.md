@@ -99,3 +99,10 @@ Estimation of nonlinear trends in water quality: an improved approach using gene
 * Compares GAMs with Seasonal Kendall and robust regression
 * Also includes methods for adjustment to seasonal or flow effects
 * Provides citations for use of GAMs in air quality studies  
+
+## Wan et al. 2017
+
+Decadal and seasonal trends of nutrient concentration and export from highly managed coastal catchments [link](https://doi.org/10.1016/j.watres.2017.02.068)
+
+* Uses seasonal-trend decomposition and LOESS to evaluate trends of nutrient concentrations and export over a 35 year period in South Florida
+* Emphasis on chemostatic and chemodynamic trends where the former indicates that export is independent of climate/precipitation patterns and latter is the opposite, often linked to anthropogenic sources

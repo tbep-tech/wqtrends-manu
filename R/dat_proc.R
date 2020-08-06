@@ -6,6 +6,39 @@ library(officer)
 
 source('R/funcs.R')
 
+# model levels and labels
+modlvs <- c('gam0', 'gam1', 'gam2', 'gam6')
+modlbs <- c('gam0', 'Const seas', 'Int seas', 'Const seas*')
+names(modlvs) <- modlbs
+
+# best mod
+modbst <- modlbs[4]
+
+# # save all models with different naming convention ------------------------
+# 
+# mods <- list.files('data', pattern = '^mods\\_chl|modslog\\_chl', full.names = T)
+# 
+# for(mod in mods){
+#   
+#   cat(mod, '\t')
+#   
+#   load(file = mod)
+#   nm <- gsub('\\.RData$', '', basename(mod))
+#   dat <- get(nm)
+#   
+#   dat <- dat %>% 
+#     filter(model != 'gam0') %>% 
+#     mutate(
+#       model = factor(model, levels = modlvs, labels = modlbs), 
+#       model = fct_drop(model)
+#     )
+#   
+#   assign(nm, dat)
+#   
+#   save(list = nm, file = mod, compress = 'xz')
+#     
+# }
+
 # model performance summaries ---------------------------------------------
 
 modprf <- list.files('data', pattern = '^mods\\_chl|modslog\\_chl', full.names = T) %>% 
@@ -16,19 +49,17 @@ modprf <- list.files('data', pattern = '^mods\\_chl|modslog\\_chl', full.names =
     prf = purrr::map(value, function(x){
       
       load(file = x)
-  
+
       nm <- basename(x)
       nm <- gsub('\\.RData', '', nm)
       
       dat <- get(nm) %>% 
         select(model, modi) %>% 
-        filter(model != 'gam0') %>% 
         deframe()
       
       trans <- lapply(dat, function(x) x$trans) %>% 
         enframe('model', 'trans') %>%
-        unnest('trans') %>% 
-        filter(model != 'gam0')
+        unnest('trans') 
   
       prf <- anlz_fit(mods = dat)
 
@@ -81,7 +112,7 @@ seastrnd <- list.files('data', pattern = '^mods\\_chl', full.names = T) %>%
       nm <- gsub('\\.RData', '', nm)
       
       out <- get(nm) %>% 
-        filter(model == 'gam6') %>% 
+        filter(model == !!modbst) %>% 
         select(model, modi) %>% 
         deframe()
       
@@ -153,7 +184,7 @@ seastrnd2 <- list.files('data', pattern = '^mods\\_chl', full.names = T) %>%
       nm <- gsub('\\.RData', '', nm)
       
       out <- get(nm) %>% 
-        filter(model == 'gam6') %>% 
+        filter(model == !!modbst) %>% 
         select(model, modi) %>% 
         deframe()
       
@@ -222,7 +253,6 @@ chgtrnd <- list.files('data', pattern = '^mods\\_chl', full.names = T) %>%
 
       out <- get(nm) %>%  
         select(model, modi) %>% 
-        filter(model != 'gam0') %>% 
         deframe() 
       
       return(out)
@@ -251,4 +281,5 @@ chgtrnd <- list.files('data', pattern = '^mods\\_chl', full.names = T) %>%
   ) 
 
 save(chgtrnd, file = 'data/chgtrnd.RData', compress = 'xz')
+
 
