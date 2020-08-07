@@ -7,12 +7,12 @@ library(officer)
 source('R/funcs.R')
 
 # model levels and labels
-modlvs <- c('gam0', 'gam1', 'gam2', 'gam6')
-modlbs <- c('gam0', 'Const seas', 'Int seas', 'Const seas*')
+modlvs <- c('gam1', 'gam2', 'gam6')
+modlbs <- c('Const seas', 'Int seas', 'Const seas*')
 names(modlvs) <- modlbs
 
 # best mod
-modbst <- modlbs[4]
+modbst <- modlbs[3]
 
 # # save all models with different naming convention ------------------------
 # 
@@ -29,8 +29,7 @@ modbst <- modlbs[4]
 #   dat <- dat %>% 
 #     filter(model != 'gam0') %>% 
 #     mutate(
-#       model = factor(model, levels = modlvs, labels = modlbs), 
-#       model = fct_drop(model)
+#       model = factor(model, levels = modlvs, labels = modlbs)
 #     )
 #   
 #   assign(nm, dat)
@@ -78,7 +77,8 @@ modprf <- list.files('data', pattern = '^mods\\_chl|modslog\\_chl', full.names =
   mutate(
     value = gsub('^data/mods\\_chl|^data/modslog\\_chl|\\.RData$', '', value), 
     p.value = p_ast(p.value), 
-    p.value = ifelse(is.na(p.value), '-', p.value)
+    p.value = ifelse(is.na(p.value), '-', p.value), 
+    model = factor(model, levels = modlbs)
   ) %>% 
   rename(
     station = value, 
