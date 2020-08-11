@@ -283,3 +283,115 @@ chgtrnd <- list.files('data', pattern = '^mods\\_chl', full.names = T) %>%
 save(chgtrnd, file = 'data/chgtrnd.RData', compress = 'xz')
 
 
+# trend model comparisons -------------------------------------------------
+
+cmptrnd <- list.files('data', pattern = '^mods\\_chl', full.names = T) %>% 
+  crossing(
+    fl = ., 
+    tibble(
+      # doystr = c(1, 91, 182, 274), 
+      # doyend = c(90, 181, 273, 364)
+      doystr = c(41, 214), 
+      doyend = c(213, 338)
+    ), 
+    tibble(
+      yrstr = c(1990, 2000, 2010),
+      yrend = c(1999, 2009, 2017)
+    )
+  ) %>% 
+  group_by(fl) %>% 
+  nest() %>% 
+  mutate(
+    mod = purrr::map(fl, function(x){
+      
+      load(file = x)
+      
+      nm <- basename(x)
+      nm <- gsub('\\.RData', '', nm)
+      
+      out <- get(nm) %>% 
+        filter(model == !!modbst) %>% 
+        select(model, modi) %>% 
+        deframe()
+      
+      return(out)
+      
+    })
+  ) %>% 
+  unnest(c('data')) %>% 
+  group_by(doystr, doyend, mod, fl) %>% 
+  nest() %>% 
+  mutate(
+    avgseas = purrr::pmap(list(mods = mod, doystr, doyend), anlz_avgseason)
+  ) %>% 
+  unnest('data') %>% 
+  mutate(
+    yrstr = purrr::pmap(list(yrstr, avgseas), function(yrstr, avgseas){
+      max(yrstr, min(avgseas$yr))
+    }), 
+    yrend = purrr::pmap(list(yrend, avgseas), function(yrend, avgseas){
+      min(yrend, max(avgseas$yr))
+    }),
+    metatrnd = purrr::pmap(list(avgseas, yrstr, yrend), anlz_mixmeta),
+    lmtrnd = purrr::pmap(list(avgseas, yrstr, yrend), function(avgseas, yrstr, yrend){
+      out <- avgseas %>% 
+        filter(yr >= yrstr & yr <= yrend) %>% 
+        lm(predicted ~ yr, .)
+      return(out)
+    }), 
+    obstrnd = purrr::pmap(list(doystr, doyend, mod, yrstr, yrend), function(doystr, doyend, mod, yrstr, yrend){
+      trans <- mod[[1]]$trans
+      moddat <- mod[[1]]$model %>% 
+        mutate(
+          yr = floor(dec_time), 
+          value = case_when(
+            is.numeric(trans) ~ forecast::InvBoxCox(value, trans), 
+            trans == 'log10' ~ 10 ^ value
+          )
+        ) %>% 
+        filter(doy >= doystr & doy <= doyend) %>% 
+        filter(yr >= yrstr & yr <= yrend) %>% 
+        group_by(yr) %>%
+        summarise(value = mean(value, na.rm = T), .groups = 'drop') 
+      out <- lm(value ~ yr, moddat)
+      return(out)
+    })
+  ) %>% 
+  ungroup %>% 
+  select(-mod, -avgseas) %>% 
+  gather('mod', 'est', metatrnd, lmtrnd, obstrnd) %>% 
+  mutate(
+    yrcoef = purrr::pmap(list(mod, est), function(mod, est){
+      
+      if(mod == 'metatrnd')
+        est <- est[[1]]
+      
+      est$coefficients[[2]]
+      
+    }),
+    pval = purrr::map(est, function(x){
+      
+      if(inherits(x, 'list'))
+        x <- x[[1]]
+      
+      coefficients(summary(x)) %>% data.frame %>% .[2, 4]
+      
+    })
+  ) %>% 
+  select(station = fl, seas = doystr, yrs = yrstr, mod, yrcoef, pval) %>% 
+  mutate(
+    station = gsub('^data/mods\\_chl|\\.RData$', '', station),
+    seas = factor(seas, levels = c('41', '214'), labels = c('Jan-Jul', 'Aug-Dec')),
+    yrs = case_when(
+      yrs < 1995 ~ '1990-2000', 
+      yrs >=1995 & yrs < 2005 ~ '2000-2010', 
+      yrs >= 2005 ~ '2010-2016'
+    ), 
+    yrs = factor(yrs), 
+    mod = factor(mod, levels = c('obstrnd', 'lmtrnd', 'metatrnd'), labels = c('Observed', 'Average', 'Mixed-meta')), 
+    pval = ifelse(pval <= 0.05, 'p < 0.05', 'ns')
+  ) %>% 
+  unnest('yrcoef') %>% 
+  mutate(station = factor(station, levels = rev(unique(station))))
+
+save(cmptrnd, file = 'data/cmptrnd.RData', compress = 'xz')
