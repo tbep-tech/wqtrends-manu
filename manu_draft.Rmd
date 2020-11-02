@@ -292,11 +292,15 @@ p1 <- ggplot(toplo1, aes(x = yr, y = value, fill = Median, group = yr)) +
 p2 <- ggplot(toplo2, aes(x = mo, y = value, fill = yrcat)) + 
   geom_violin(draw_quantiles = 0.5)  + 
   scale_y_log10(ylab) +
+  facet_wrap(~yrcat, ncol = 3) + 
   theme_minimal(base_family = 'serif') +
   scale_fill_manual(values = cls2) +
   theme(
     legend.title = element_blank(), 
-    axis.title.x = element_blank()
+    legend.position = 'none', 
+    axis.title.x = element_blank(), 
+    axis.text.x = element_text(angle = 40, hjust = 1), 
+    strip.background = element_blank()
   ) +
   labs(
     y = ylab, 
@@ -304,7 +308,7 @@ p2 <- ggplot(toplo2, aes(x = mo, y = value, fill = yrcat)) +
   )
 
 p <- p1 + p2 + plot_layout(ncol = 1)
-png('figs/obsdat.png', height = 8, width = 8, family = 'serif', units = 'in', res = 400)
+png('figs/obsdat.png', height = 7, width = 8, family = 'serif', units = 'in', res = 400)
 print(p)
 dev.off()
 ```
