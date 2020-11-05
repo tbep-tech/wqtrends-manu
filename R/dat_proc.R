@@ -5,6 +5,7 @@ library(mgcv)
 library(flextable)
 library(officer)
 library(lubridate)
+library(mgcv)
 
 source('R/funcs.R')
 
@@ -99,7 +100,7 @@ seastrnd <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
     ), 
     tibble(
       yrstr = c(1990, 2000, 2010),
-      yrend = c(1999, 2009, 2017)
+      yrend = c(1999, 2009, 2019)
     )
   ) %>% 
   group_by(fl) %>% 
@@ -150,7 +151,7 @@ seastrnd <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
     yrs = case_when(
       yrs < 1995 ~ '1990-2000', 
       yrs >=1995 & yrs < 2005 ~ '2000-2010', 
-      yrs >= 2005 ~ '2010-2016'
+      yrs >= 2005 ~ '2010-2019'
     ), 
     yrs = factor(yrs)
   ) %>% 
@@ -169,7 +170,7 @@ seastrnd2 <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
     ), 
     tibble(
       yrstr = c(1991, 2000, 2010),
-      yrend = c(1999, 2009, 2016)
+      yrend = c(1999, 2009, 2019)
     )
   ) %>% 
   group_by(fl) %>% 
@@ -220,7 +221,7 @@ seastrnd2 <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
     yrs = case_when(
       yrs < 1995 ~ '1990-2000', 
       yrs >=1995 & yrs < 2005 ~ '2000-2010', 
-      yrs >= 2005 ~ '2010-2016'
+      yrs >= 2005 ~ '2010-2019'
     ), 
     yrs = factor(yrs)
   ) %>% 
@@ -235,7 +236,7 @@ chgtrnd <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
     fl = ., 
     tibble(
       yrstr = c(1990, 2000, 2010),
-      yrend = c(1999, 2009, 2017)
+      yrend = c(1999, 2009, 2019)
     )
   ) %>% 
   group_by(fl) %>% 
@@ -268,7 +269,7 @@ chgtrnd <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
     yrs = case_when(
       yrs < 1995 ~ '1990, 2000', 
       yrs >=1995 & yrs < 2005 ~ '2000, 2010', 
-      yrs >= 2005 ~ '2010, 2016'
+      yrs >= 2005 ~ '2010, 2019'
     ), 
     yrs = factor(yrs), 
     persgn = sign(perchg), 
@@ -291,7 +292,7 @@ cmptrnd <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
     ), 
     tibble(
       yrstr = c(1990, 2000, 2010),
-      yrend = c(1999, 2009, 2017)
+      yrend = c(1999, 2009, 2019)
     )
   ) %>% 
   group_by(fl) %>% 
@@ -378,7 +379,7 @@ cmptrnd <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
     yrs = case_when(
       yrs < 1995 ~ '1990-2000', 
       yrs >=1995 & yrs < 2005 ~ '2000-2010', 
-      yrs >= 2005 ~ '2010-2016'
+      yrs >= 2005 ~ '2010-2019'
     ), 
     yrs = factor(yrs), 
     mod = factor(mod, levels = c('obstrnd', 'lmtrnd', 'metatrnd'), labels = c('Observed', 'Average', 'Mixed-meta')), 
@@ -388,3 +389,57 @@ cmptrnd <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
   mutate(station = factor(station, levels = rev(unique(station))))
 
 save(cmptrnd, file = 'data/cmptrnd.RData', compress = 'xz')
+
+# model structure comparisons ---------------------------------------------
+
+tomod <- rawdat %>%
+  filter(station %in% 32) %>%
+  filter(param %in% 'chl')
+
+# get transformation
+moddat <- anlz_trans(tomod, trans = 'log10')
+
+# frms <- c(
+#   'S' = "value ~ s(cont_year, k = 360)",  
+#   'SY' = "value ~ cont_year + s(cont_year, k = 360)",
+#   'SYD' = "value ~ cont_year + s(cont_year, k = 360) + s(doy, bs = 'cc', k = 360)",
+#   'SYDI' = "value ~ cont_year + s(cont_year, k = ) + s(doy, bs = 'cc', k = 90) + ti(cont_year, doy, bs = c('tp', 'cc'), k = 90)"
+# ) 
+
+S <- gam(value ~ s(cont_year, k = 360),
+         knots = list(doy = c(1, 366)),
+         data = moddat,
+         na.action = na.exclude,
+         select = F)
+S$trans <- 'log10'
+SY <- gam(value ~ cont_year + s(cont_year, k = 360),
+          knots = list(doy = c(1, 366)),
+          data = moddat,
+          na.action = na.exclude,
+          select = F)
+SY$trans <- 'log10'
+SYD <- gam(value ~ cont_year + s(cont_year, k = 360) + s(doy, bs = 'cc', k = 230),
+           knots = list(doy = c(1, 366)),
+           data = moddat,
+           na.action = na.exclude,
+           select = F)
+SYD$trans <- 'log10'
+SYDI <- gam(value ~ cont_year + s(cont_year, k = 300) + s(doy, bs = 'cc', k = 100) + ti(cont_year, doy, bs = c('tp', 'cc'), k = 15),
+            knots = list(doy = c(1, 366)),
+            data = moddat,
+            na.action = na.exclude,
+            method = 'REML',
+            select = F)
+SYDI$trans <- 'log10'
+
+modstr <- list(
+  S = S, 
+  SY = SY,
+  SYD = SYD, 
+  SYDI = SYDI
+)
+
+
+# anlz_fit(mods = modstr)
+
+save(modstr, file = 'data/modstr.RData', compress = 'xz')

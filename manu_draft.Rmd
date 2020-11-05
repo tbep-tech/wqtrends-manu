@@ -40,6 +40,7 @@ data(seastrnd)
 data(seastrnd2)
 data(chgtrnd)
 data(cmptrnd)
+data(modstr)
 data(modslog_chl18)
 data(modslog_chl24)
 data(modslog_chl27)
@@ -47,10 +48,6 @@ data(modslog_chl32)
 data(modslog_chl34)
 
 source('R/funcs.R')
-
-# model levels and labels
-modlbs <- c('Const seas', 'Int seas', 'Const seas*')
-modbst <- modlbs[3]
 
 locs <- locs %>% 
   rename(station = Station)
@@ -95,7 +92,7 @@ The San Francisco Estuary (SFE) is the largest estuary on the Pacific Coast of N
 
 Nitrogen and phosphorus levels in SFE generally exceed concentrations that have been observed to promote excess primary production in other large estuarine systems.  However, eutrophic conditions have not been regularly observed since routine monitoring began in the 1970s.  Historical resistance of SFE to eutrophication has been attributed to several factors, including elevated suspended sediments that reduce light penetration in the water column, regular exchange and mixing with low-nutrient marine waters and export of estuarine nutrients to the Pacific Ocean, and benthic grazing by filter-feeding bivalves that reduce algal concentrations.  Renewed interest in the potential for nutrient loading to negatively affect water quality has occurred recently, particularly in South Bay, where harmful algal blooms (HABs), increases in summer-fall chlorophyll concentrations, and low dissolved oxygen concentrations beginning in 1999 (Figure \@ref(fig:obsdat)) [@Cloern20]. Although visual changes in observed data are apparent, statistical analyses to quantify current status and to provide estimates of annual and seasonal trends with appropriate bounds on uncertainty have not been sufficiently developed, particularly on a seasonal basis.
 
-The analysis evaluated near-surface chlorophyll-a data collected biweekly to monthly along the South Bay axis extending from Central Bay (stations 18-23), South Bay (stations 24-32), and Lower South Bay (stations 34-36) (Table \@ref(tab:sumtab), Figure \@ref(fig:sitemap)). Monitoring data were obtained from the SFE Research Program of the US Geological Survey [@Cloern16;@Schraga20].  Discrete chlorophyll concentrations at each station were determined by fluorimetric analysis with 90% acetone pigment extraction on GFF filters. Data collected between 1990-2017 were selected for analysis because it represented a suitable balance among three factors relevant to testing the statistical approaches, including sufficient length of record, consistent biweekly-monthly sampling, and a diverse set of stations covering the salinity gradient across multiple subembayments.  While sampling frequency varied somewhat over time or by station, all data were treated as unique time series within the statistical models (i.e., no spatial or temporal binning or averaging was done).
+The analysis evaluated near-surface chlorophyll-a data collected biweekly to monthly along the South Bay axis extending from Central Bay (stations 18-23), South Bay (stations 24-32), and Lower South Bay (stations 34-36) (Table \@ref(tab:sumtab), Figure \@ref(fig:sitemap)). Monitoring data were obtained from the SFE Research Program of the US Geological Survey [@Cloern16;@Schraga20].  Discrete chlorophyll concentrations at each station were determined by fluorimetric analysis with 90% acetone pigment extraction on GFF filters. Data collected between 1990-2019 were selected for analysis because it represented a suitable balance among three factors relevant to testing the statistical approaches, including sufficient length of record, consistent biweekly-monthly sampling, and a diverse set of stations covering the salinity gradient across multiple subembayments.  While sampling frequency varied somewhat over time or by station, all data were treated as unique time series within the statistical models (i.e., no spatial or temporal binning or averaging was done).
 
 ## GAM application
 
@@ -205,42 +202,7 @@ We apply this method for windows of a chosen width of years.  This approach prov
 
 # Results
 
-## Model performance and observed results
 
-```{r}
-aver2 <- round(100 * mean(modprf$R2), 0)
-minr2 <- round(100 * min(modprf$R2), 0)
-maxr2 <- round(100 * max(modprf$R2), 0)
-minst <- modprf$station[which.min(modprf$R2)]
-minstmod <- modprf$model[which.min(modprf$R2)]
-minsttrn <- modprf$trans[which.min(modprf$R2)]
-minsttrn <- ifelse(is.numeric(minsttrn), 'Box-Cox model', 'log-model')
-maxst <- modprf$station[which.max(modprf$R2)]
-maxstmod <- modprf$model[which.max(modprf$R2)]
-maxsttrn <- modprf$trans[which.max(modprf$R2)]
-maxsttrn <- ifelse(is.numeric(maxsttrn), 'Box-Cox model', 'log-model')
-avecsr2 <- modprf %>% filter(model %in% 'Const seas') %>% pull(R2) %>% mean %>% '*'(100) %>% round(0)
-logr2 <- modprf %>% filter(grepl('^log10$', trans)) %>% pull(R2) %>% mean %>% '*'(100) %>% round(0)
-bxcxr2 <- modprf %>% filter(!grepl('^log10$', trans)) %>% pull(R2) %>% mean %>% '*'(100) %>% round(0)
-```
-
-A total of six models (three GAM structures, two link functions) were fit to each of nine stations, producing summary statistics for 18 different models (Table \@ref(tab:modprftab)).  Chlorophyll trends were generally well-explained across all models and stations, with an average R-squared value equal to `r aver2`% and ranging from `r minr2`% (`r minstmod` `r minsttrn` at station `r minst`) to `r maxr2`% (`r maxstmod` `r maxsttrn` at station `r maxst`). The constant season model had the worst performance for all stations (average R$^2$ `r avecsr2`%), with either the interactive season or constant season* model having improved measures of model fit.  For all but stations 18 and 22, the constant season* model provided significantly lower AIC and GCV scores and higher R-squared values compared to the interactive season models.  For station 18, the interactive season and constant season* models provided only a marginal improvement over the constant season model.  For station 22, the interactive season and constant season* models provided similar but much improved fit to the data as compared to the constant season model.  Moeel performance comparing either Box-Cox or logarithmic link functions were similar (average R$^2$ values of `r bxcxr2`% and `r logr2`% respectively), although the logarithmic models had slightly improved model performance. Station 18 was the only location where the three GAM models were not significantly different from each other for the Box-Cox transformation.
-
-GAM predictions from north to south on the longitudinal axis provided different descriptions of annual and seasonal changes in chlorophyll.  Four representative stations are shown in Figure \@ref(fig:trnddat) that capture spatial variation in chlorophyll and different temporal trends described by the models.  All models suggested an increase in chlorophyll in the period of record from 1990 to approximately 2005 to 2010, when predictions suggested a decreasing trend until the end of the record. Seasonally, all models indicated a larger spring peak in chlorophyll with more southern stations, whereas a subsequent peak in fall concentrations did not have any noticeable difference in magnitude by location.  However, the magnitude of the fall peak at more southern stations shifted over time depending on the model.  In particular, the interactive season model indicates a shift in the magnitude of the fall peak at stations 24, 27, and 32 with maximum concentrations observed around the mid-early 2000s. The annual trends for all models suggested similar trends over time, i.e., an increase followed by a recent decrease, whereas the constant season* models with an unconstrained smoother on the `decYear` predictor varied considerably at station 24, 27, and 32. Annual trends at these stations were difficult to generalize and had substantial overlap with the seasonal trends.  Conversely, station 18 had minimal visual differences in annual and seasonal trends across all models, which is reflected by similarities in the model performance statistics in Table \@ref(tab:modprftab).
-
-## Trend estimates
-
-Examples of results provided by the trend tests are shown for station 34, with estimates of percent change between year pairs and seasonal trend results for January to July and August to December (Figure \@ref(fig:trnddat)).  This figure illustrates the narrative descriptions that can be obtained for each test and the differences that can be observed depending on season.  Figures \@ref(fig:trnddat)a-c demonstrate that average chlorophyll at station 34 from 1990 to 2000 had a 57.7% increase, although the change is insignificant.  However, the change from 2000 to 2010 was statistically significant with an increase of 78%.  The period from 2010 to 2017 showed a significant decrease of 39.8%.  An assessment of the annual differences indicated if changes overall were observed, but provides no information on seasonal shifts that may have contributed to these differences. The results in figure \@ref(fig:trnddat)d-i show results from mixed-meta regression analysis to indicate which seasonal changes were contributing to the annual differences. Rows d-f show the seasonal averages and trend estimates for the same year periods in rows a-c, but only for months from January to July.  Similarly, rows g-i show the seasonal averages and trend estimates from August to December.  The seasonal trend results suggested that the increase in annual averages from 2000 to 2010 was likely caused by an increase in chlorophyll values in the fall (Figure \@ref(fig:trnddat)h).  Seasonal changes from 2010 to 2017 showed that neither the January to July nor August to December changes were significant, suggesting an overall decrease in chlorophyll across all seasons may have recently occurred. 
-
-Spatial variation in trends suggested that most stations in South Bay had increasing chlorophyll from 1990 to 2010 following a decrease in recent years, although many trends were not significant and varied by location (Figure \@ref(fig:trndmap)a).  From 1990 to 2000, only station 18 and 22 in the northern part of South Bay had significant increasing trends.  The magnitude of the chlorophyll increase in the southernmost stations (34, 36) was higher during this same period, although the trends were not significant.  From 2000 to 2010, significant increases were observed at the three northern-most stations (18, 21, and 22) and two southern stations (32, 34).  From 2010 to 2016, all four southern stations had significant decreases in annual chlorophyll.  The spatial trends were further evaluated with mixed-meta regression analysis to provide additional context to the annual changes by evaluating trends from January to July and August to December (Figure \@ref(fig:trndmap)b).  For the January to July period, significant changes were only observed at the southern stations, with increases at station 34 and 36 from 1990-2000, an increase at station 34 from 2000-2010, and a decrease at station 32 form 2010 to 2016.  No significant changes were observed for the August to December period.  
-
-A final analysis of the seasonal trends evaluated more discrete monthly periods in three month blocks to provide finer resolution to explain trends from the GAM results (Table \@ref(tab:seastrndtab)).  Many stations and time periods did not show any seasonal chlorophyll trends or only had one significant trend (e.g., stations 21 and 24, JFM period from 2000-2010).  However, several trends were observed in the southern stations, with two significant trends at station 32, six at station 34, and three at station 36.  Trends at station 32 indicated a positive increase in the JFM (January, February, March) period from 2000-2010, followed by a significant decrease for the same seasonal period from 2010-2016.  Station 34 had significant increases in the JFM period from 1990-2010 and all other periods the OND (October, November, December) period for 2000 to 2010.  Significant decreases were observed at station 34 in the JFM and AMJ (April, March, July) period from 2010 to 2016.  Station 36 had significant chlorophyll increases in all seasons, except OND for the 1990 to 2000 period.  Accordingly, table \@ref(tab:seastrndtab) demonstrates the value of obtaining greater insight into seasonal changes by evaluating different blocks as compared to the larger seasonal blocks shown in Figure \@ref(fig:trndmap)b. 
-
-## Trend comparisons 
-
-Trends results from the mixed-meta regression method for each season and different time periods were compared to alternative trend analyses to demonstrate different conclusions that can be derived depending on method.  Figure \@ref(fig:trndcmp) shows estimates of chlorophyll change per year for the same seasonal periods and annual groupings as in figure \@ref(fig:trndmap)b.  In addition to mixed-meta analysis, two alternative trend methods were used where the first shows slope estimates from a linear regression on annual averages of observed chlorophyll for the specified seasonal period and the second shows slope estimates from a linear regression model on annual averages derived from the GAM seasonal estimates.  The latter uses the same averages from the mixed-meta analysis, but is a simpler approach that does not account for the uncertainty in the average estimates.  
-
-The different trend analysis methods provided conflicting information on the magnitude and direction of the seasonal chlorophyll changes in each decade (Figure \@ref(fig:trndcmp)).  The slope estimates from the linear model applied to the observed data were understandably more variable than the slope estimate from the average and mixed-meta methods, with much larger slopes observed especially at the more southern stations.  Slope estimates from the linear model applied to the averages from the GAMs as compared ot the mixed-meta results were identical at almost all stations, excluding station 32 in the January-July period from 1990-2000 when the former showed a negative slope and the latter showed a positive slope.  The mixed-meta analyses had less significant trends compared to the average results for the same GAM estimates, which reflects the ability of the former to account for uncertainty in the average estimates when considering trends.  Importantly, completely opposite and/or varying significance of trends were observed between the methods, suggesting choice of analysis method can influence the certainty of conclusions. 
 
 # Discussion
 
@@ -269,9 +231,9 @@ toplo2 <- rawdat %>%
     yrcat = case_when(
       yr < 2000  ~ '1990-2000', 
       yr >= 2000 & yr < 2010 ~ '2000-2010', 
-      yr >= 2010 ~ '2010-2017'
+      yr >= 2010 ~ '2010-2019'
     ), 
-    yrcat = factor(yrcat, levels = c('1990-2000', '2000-2010', '2010-2017'))
+    yrcat = factor(yrcat, levels = c('1990-2000', '2000-2010', '2010-2019'))
   )
 
 ylab <- expression(paste("Chlorophyll-a (", italic(mu), "g ", L^-1, ")"))
@@ -374,7 +336,7 @@ dev.off()
 knitr::include_graphics('figs/sitemap.png')
 ```
 
-```{r, results = 'hide'}
+```{r, results = 'hide', eval = F}
 # get predictions for all three gams
 tomod <- rawdat %>%
   filter(station %in% 22) %>%
@@ -401,14 +363,14 @@ png('figs/modsumfig.png', height = 2.5, width = 6, units = 'in', family = 'serif
 print(p1)
 dev.off()
 ```
-```{r modsumfig, fig.cap = "General output for each of the GAM structures for constant season, interactive season, and constant season*.  Day of year (Julian) is on the x-axis and each curve represents a different fitted year for chlorophyll concentration."}
+```{r modsumfig, fig.cap = "General output for each of the GAM structures for constant season, interactive season, and constant season*.  Day of year (Julian) is on the x-axis and each curve represents a different fitted year for chlorophyll concentration.", eval = F}
 knitr::include_graphics('figs/modsumfig.png')
 ```
 
-```{r, results = 'hide', message = F}
+```{r, results = 'hide', message = F, eval = F}
 # get predictions to plot
-prdplo <- bind_rows(mods_chl18, mods_chl24, mods_chl27, mods_chl32) %>% 
-  mutate(prddat = pmap(list(data, modi), function(data, modi){
+prdplo <- bind_rows(modslog_chl18, modslog_chl24, modslog_chl27, modslog_chl32) %>% 
+  mutate(prddat = pmap(list(data, model), function(data, model){
 
     prddat <- data.frame(
         dec_time = seq(min(data$dec_time), max(data$dec_time), length = 1000)
@@ -421,16 +383,16 @@ prdplo <- bind_rows(mods_chl18, mods_chl24, mods_chl27, mods_chl32) %>%
         yr = year(date)
       )
     
-    prd <- predict(modi, newdata = prddat) %>% 
+    prd <- predict(model, newdata = prddat) %>% 
       as.numeric
     
-    annprd <- predict(modi, newdata = prddat, type = 'terms')
+    annprd <- predict(model, newdata = prddat, type = 'terms')
     int <- attr(annprd, 'constant')
     value <- rowSums(annprd) + int
     annvalue <- rowSums(annprd[, !grepl('doy', colnames(annprd)), drop = FALSE]) + int
     annvalue <- as.numeric(annvalue)
     
-    trans <- unique(modi$trans)
+    trans <- unique(model$trans)
     
     if(!inherits(trans, 'numeric'))
       stop('log used')
@@ -445,7 +407,7 @@ prdplo <- bind_rows(mods_chl18, mods_chl24, mods_chl27, mods_chl32) %>%
     return(prddat)
     
   })) %>% 
-  select(station, modi = model, prddat) %>% 
+  select(station, model = model, prddat) %>% 
   unnest(prddat) 
 
 ylab <- expression(paste("Chlorophyll-a (", mu, "g ", L^-1, ")"))
@@ -472,7 +434,7 @@ p1 <- ggplot(toplo, aes(x = date, y = chl)) +
     # axis.text.x= element_text(size = 8)
     strip.background = element_blank()
   ) + 
-  facet_grid(modi ~ station) +
+  facet_grid(model ~ station) +
   scale_y_log10(limits = c(0.74, 83)) + 
   labs(x = 'Date', subtitle = '(a) Model predictions with annual estimates', y = ylab)
 
@@ -487,7 +449,7 @@ p2 <- ggplot(toplo, aes(x = doy, colour = yr, group = factor(yr))) +
   ) + 
   scale_colour_continuous_sequential(palette = colpal, rev = T, begin = 0.2) +
   guides(colour = guide_colourbar(barheight = 10, barwidth = 1)) +
-  facet_grid(modi ~ station) +
+  facet_grid(model ~ station) +
   scale_y_log10() + 
   labs(x = 'Day of year', subtitle = '(b) Model predictions by day of year', y = ylab)
 
@@ -497,14 +459,13 @@ png('figs/prddat.png', height = 10, width = 9, family = 'serif', units = 'in', r
 print(p)
 dev.off()
 ```
-```{r prddat, fig.cap = "GAM predictions for select stations from north to south (18, 24, 27, 32) for each of the GAM structures for constant season, interactive season, and constant season*. The results show (a) predictions across the time series with annual estimates (red line) and (b) predictions by day of year with one smooth per year.  Observed data in (a) are shown with the gray points. Station locations are in Figure \\@ref(fig:sitemap)."}
+```{r prddat, fig.cap = "GAM predictions for select stations from north to south (18, 24, 27, 32) for each of the GAM structures for constant season, interactive season, and constant season*. The results show (a) predictions across the time series with annual estimates (red line) and (b) predictions by day of year with one smooth per year.  Observed data in (a) are shown with the gray points. Station locations are in Figure \\@ref(fig:sitemap).", eval = F}
 knitr::include_graphics('figs/prddat.png')
 ```
 
 ```{r, results = 'hide', message = F}
-toplo <- mods_chl34 %>% 
-  filter(model %in% !!modbst) %>% 
-  pull(modi)
+toplo <- modslog_chl34 %>%
+  pull(model)
 
 ylim <- c(-1, 19)
 ylab <- expression(paste("Chlorophyll-a (", mu, "g ", L^-1, ")"))
@@ -519,9 +480,9 @@ p2 <- show_perchg(mods = toplo, baseyr = 2000, testyr = 2010, ylab = NULL) +
     subtitle = '(b) 2000, 2010, Base: 5.7, Test: 10.1,\nChange: 77.5%, p < 0.001', 
     title = NULL
   )
-p3 <- show_perchg(mods = toplo, baseyr = 2010, testyr = 2017, ylab = NULL) +
+p3 <- show_perchg(mods = toplo, baseyr = 2010, testyr = 2019, ylab = NULL) +
   labs(
-    subtitle = '(c) 2010, 2017, Base: 10.1, Test: 6.1,\nChange: -39.8%, p < 0.01', 
+    subtitle = '(c) 2010, 2019, Base: 10.1, Test: 6.1,\nChange: -39.8%, p < 0.01', 
     title = NULL
   )
 p4 <- show_avgseason(mods = toplo, doystr = 41, doyend = 213, yrstr = 1991, yrend = 2000, ylab = ylab) +
@@ -536,10 +497,10 @@ p5 <- show_avgseason(mods = toplo, doystr = 41, doyend = 213, yrstr = 2000, yren
     subtitle = '(e) 2000-2010, Jan-Jul, slope 0.5, ns', 
     title = NULL
   )
-p6 <- show_avgseason(mods = toplo, doystr = 41, doyend = 213, yrstr = 2010, yrend = 2016, ylab = NULL) +
+p6 <- show_avgseason(mods = toplo, doystr = 41, doyend = 213, yrstr = 2010, yrend = 2019, ylab = NULL) +
   scale_y_continuous(limits = ylim) + 
   labs(
-    subtitle = '(f) 2010-2017, Jan-Jul, slope -0.4, ns', 
+    subtitle = '(f) 2010-2019, Jan-Jul, slope -0.4, ns', 
     title = NULL
   )
 p7 <- show_avgseason(mods = toplo, doystr = 213, doyend = 338, yrstr = 1991, yrend = 2000, ylab = ylab) +
@@ -554,10 +515,10 @@ p8 <- show_avgseason(mods = toplo, doystr = 213, doyend = 338, yrstr = 2000, yre
     subtitle = '(h) 2000-2010, Aug-Dec, slope 0.56, p < 0.05', 
     title = NULL
   )
-p9 <- show_avgseason(mods = toplo, doystr = 213, doyend = 338, yrstr = 2010, yrend = 2017, ylab = NULL) +
+p9 <- show_avgseason(mods = toplo, doystr = 213, doyend = 338, yrstr = 2010, yrend = 2019, ylab = NULL) +
   scale_y_continuous(limits = ylim) + 
   labs(
-    subtitle = '(i) 2010-2017, Aug-Dec, slope -0.52, ns', 
+    subtitle = '(i) 2010-2019, Aug-Dec, slope -0.52, ns', 
     title = NULL
   )
 
@@ -599,8 +560,7 @@ toplo1 <- chgtrnd %>%
     station = as.numeric(station),
     pval = ifelse(pval == 'sig', '*', '')
     ) %>% 
-  left_join(locs, by = 'station') %>% 
-  filter(model %in% !!modbst)
+  left_join(locs, by = 'station')
 
 toplo2 <- seastrnd2 %>%
   mutate(
@@ -721,96 +681,72 @@ tab <- flextable(totab) %>%
 tab
 ```
 
-```{r modsumtab}
+```{r modsumtab, eval = T}
 tab <- tibble(
-  GAM = c('`Constant season`', '`Interactive season`', '`Constant season*`'),
-  Summary = c(
-    'Nonlinear trends seasonality (constrained knots)', 
-    'Nonlinear trends wiht seasonality, plus interaction',
-    'Nonlinear trends with seasonality (unconstrained knots)'
+  GAM = c('`S`', '`SY`', '`SYD`', '`SYDI`'),
+  `Additive components` = c(
+    '`s(cont_year)`', 
+    '`cont_year + s(cont_year)`',
+    '`cont_year + s(cont_year) + s(doy)`', 
+    '`cont_year + s(cont_year) + s(doy) + ti(cont_year, doy)`'
   ),
   Details = c(
-    'Treats year and doy with separate smoothers with a smooth non-linear trend through time, such that the seasonal peaks are similar across years, but interannual change is evident', 
-    'Treats cyear and doy same as `Const seas`; and Within-year seasonal fluctuations that vary across years but in a constrained pattern compared to `Const seas*` (`ti(decYear, doy, bs = c("tp", "cc"))`)', 
-    'Variant of `Const seas` with much higher values of k, allowing the splines to follow greater fluctuations both within and across years.')
+    'A single smoother over a continuous year variable', 
+    'A linear continuous year variable and a single smoother over a continuous year variable', 
+    'A linear continuous year variable, a smoother over a continuous year variable, and smoother over a day of year variable',
+    'A linear continuous year variable, a smoother over a continuous year variable, smoother over a day of year variable, and an interactin smoother across continuous year and day of year variables')
   )
 
 # table stuff
-cap.val <- 'Summary and details for each of the GAM structures.'
+cap.val <- 'Summary and details for each of the GAM structures.  In practive, a sufficiently large number of knots provided to the additive terms will produce identical or comparable estimates for a response variable.  The models differ in the allocation of penalties for the smoothness of each spline (`s()`).'
 
 # table
 knitr::kable(tab, booktabs = T, caption = cap.val)
 ```
 
-```{r modprftab, tab.cap = 'Model performance statistics for each station and GAM structure (Table \\@ref(tab:modsumtab)). Results are for models of chlorophyll-a using BoxCox and logarithmic transformations. Three GAMs were fit to each station and performance is summarized as $\\Delta$ AIC (from `Const seas`),  $\\Delta$ GCV, and R-squared values.  Probability values ("P-val") show the results of Analysis of Variance comparisons between all BoxCox or logarithmic models at a station.  The p-value for a row refers to the comparison of the model in the current row to the one preceeding (`Const seas` is the base model and does not have a p-value).  A significant p-value indicates the model in the current row provides a statistically significant difference in explaining chlorophyll variance from the model in the preceding row.  ns: not significant at $\\alpha = 0.05$, * $p< 0.05$, and ** $p < 0.005$.'}
+```{r modstrtab}
+totab <- modstr %>% 
+  enframe() %>% 
+  mutate(value = purrr::map(value, function(x){
+    
+    GCV <- as.numeric(x$gcv.ubre)
+    R2 <- summary(x)$r.sq 
+    smooths <- summary(x)$s.table %>% data.frame %>% tibble::rownames_to_column('smoother')
+    
+    out <- data.frame(GCV = GCV, R2 = R2, smooths)
+    
+    return(out)
+    
+  })) %>% 
+  unnest('value') %>% 
+  select(-Ref.df) %>% 
+  mutate(p.value = p_ast(p.value)) %>% 
+  mutate_if(is.numeric, round, 2) %>% 
+  mutate(
+    GCV = ifelse(duplicated(name), '', GCV),
+    R2 = ifelse(duplicated(name), '', R2),
+    name = ifelse(duplicated(name), '', name)
+  ) %>% 
+  rename(
+    model = name, 
+    `p-val` = p.value
+  )
 
+# table stuff
+cap.val <- 'Comparison of the four model structures (S, SY, SYD, SYDI) described in the first stage analysis of GAM estimation.  The four models provide either identical or comparable ability to describe chlorophyll trends at an example station (32) in South San Francisco Bay.  The models differ in additive smoothers and the amount of effective degrees of freedom (edf) in the smoothers (measure of wiggliness in each component), but the overall model predictions are comparable. GCV: generalized cross-validation score, R2: r-squared values for predictions, edf: effective degrees of freedom, F: F-statistic, p-val: probability value, ** p < 0.001'
+
+# table
+knitr::kable(totab, booktabs = T, caption = cap.val)
+```
+
+```{r modprftab}
 totab <- modprf %>% 
-  gather('stat', 'val', AIC, GCV, R2, `P-value`) %>% 
-  mutate(trans = case_when(
-    trans != 'log10' ~ 'BoxCox', 
-    T ~ trans)
-  ) %>% 
-  unite('stat', trans, stat) %>% 
-  mutate(
-    stat = factor(stat, levels = c('BoxCox_AIC', 'log10_AIC', 'BoxCox_GCV', 'log10_GCV', 'BoxCox_R2', 'log10_R2', 'BoxCox_P-value', 'log10_P-value'))
-  ) %>% 
-  spread(stat, val) %>% 
-  mutate_at(c('BoxCox_AIC', 'log10_AIC', 'BoxCox_GCV', 'log10_GCV', 'BoxCox_R2', 'log10_R2'), as.numeric) %>% 
-  group_by(station) %>%
-  mutate(
-    BoxCox_AIC = BoxCox_AIC - max(BoxCox_AIC),
-    log10_AIC = log10_AIC - max(log10_AIC),
-    BoxCox_GCV = BoxCox_GCV - max(BoxCox_GCV),
-    log10_GCV = log10_GCV - max(log10_GCV)#,
-    # minaic = AIC == min(AIC), 
-    # mingcv = GCV == min(GCV),
-    # maxr2 = R2 == max(R2)
-  ) %>% 
-  ungroup
+  mutate_if(is.numeric, round, 2) %>% 
+  rename(`R-squared` = R2)
 
-# boldaic <- as.numeric(rownames(totab)[totab$minaic])
-# boldgcv <- as.numeric(rownames(totab)[totab$mingcv])
-# boldr2 <- as.numeric(rownames(totab)[totab$maxr2])
+cap <- 'Model performance statistics for each station as generalized cross-validation scores (GCV) and r-squared values.'
 
-totab <- totab %>% 
-  # select(-minaic, -mingcv, -maxr2) %>% 
-  mutate(
-    station = ifelse(duplicated(station), '', station)
-  ) 
-
-tab <- flextable(totab) %>% 
-  set_header_labels(
-    station = '', 
-    model = '', 
-    BoxCox_AIC = 'Delta AIC',
-    log10_AIC = 'Delta AIC',
-    BoxCox_GCV = 'Delta GCV',
-    log10_GCV = 'Delta GCV',
-    BoxCox_R2 = 'R-squared',
-    log10_R2 = 'R-squared',
-    `BoxCox_P-value` = 'P-val',
-    `log10_P-value` = 'P-val'
-  ) %>% 
-  merge_at(i = 1, j = 3:4, part = "header") %>% 
-  merge_at(i = 1, j = 5:6, part = "header") %>% 
-  merge_at(i = 1, j = 7:8, part = "header") %>% 
-  merge_at(i = 1, j = 9:10, part = "header") %>% 
-  add_header_row(values = c('Station', 'GAM', 'BoxCox', 'Log', 'BoxCox', 'Log', 'BoxCox', 'Log', 'BoxCox', 'Log'), top = F) %>% 
-  align(j = c(3:10), align = 'center', part = 'all') %>% 
-  colformat_num(j = c(3, 4), digits = 1) %>%
-  colformat_num(j = c(5, 6), digits = 3) %>% 
-  colformat_num(j = c(7, 8), digits = 2) %>% 
-  # bold(i = boldaic, j = 'AIC') %>% 
-  # bold(i = boldgcv, j = 'GCV') %>% 
-  # bold(i = boldr2, j = 'R2') %>% 
-  border_remove() %>% 
-  hline_top(border = fp_border(color = 'black')) %>% 
-  font(fontname = 'Times', part = 'all') %>%
-  font(j = 2, fontname = 'Consolas') %>% 
-  fontsize(size = 8, part = 'all') %>% 
-  autofit()
-
-tab
+knitr::kable(totab, booktabs = T, caption = cap)
 ```
 
 ```{r seastrndtab, tab.cap = 'Seasonal trends from `Const seas*` results by station and decade.  Results show the annual slope estimate as chlorophyll change per year for each seasonal period across years (JFM: January, February, March; AMJ: April, May, June; JAS: July, August, September, OND: October, November, December).  Significant trends based on mixed-meta regression analysis are indicated with asterisks at $\\alpha = 0.05$, * $p< 0.05$, and ** $p < 0.005$.'}
@@ -853,96 +789,5 @@ tab
 # Supplement
 
 When `select = TRUE` is included, the comparison between models S and SY changes.  This option tells `mgcv` to penalize the linear term's coefficient in the spline.  This would be appropriate if `cont_year` was an explanatory variable subject to variable selection -- which it is not here -- but it would be a strange choice if one is explicitly including a linear term for `cont_year`.  If `select = TRUE` is used, models S and SY would still be effectively equivalent, but it would appear by AIC selection that one model is superior.  That would be an artifact of the strange choice in model SY to include a linear trend in `cont_year` both as a separate term and as part of the spline, with the latter subject to penalization.  A link to an RMarkdown file demonstrating this issue is provided.
-
-```{r modprfboxtab, tab.cap = 'Model performance statistics for each station and GAM structure (Table \\@ref(tab:modsumtab)). Results are for models of chlorophyll-a using BoxCox transformations. Three GAMs were fit to each station and performance is summarized as $\\Delta$ AIC, GCV, and R-squared values.  Models with the lowest AIC, GCV and highest R-squared values for each station are emphasized. Probability values ("P-value") show the results of Analysis of Variance comparisons between all models at a station.  The p-value for a row refers to the comparison of the model in the current row to the one preceeding (`gam0` is the base model and does not have a p-value).  A significant p-value indicates the model in the current row provides a statistically significant difference in explaining chlorophyll variance from the model in the preceding row.  Values indicate ns for not significantly different at $\\alpha = 0.05$, * $p< 0.05$, and ** $p < 0.005$.', eval = F}
-totab <- modprf %>% 
-  filter(trans != 'log10') %>% 
-  select(-trans) %>% 
-  group_by(station) %>% 
-  mutate(
-    AIC = AIC - max(AIC),
-    minaic = AIC == min(AIC), 
-    mingcv = GCV == min(GCV),
-    maxr2 = R2 == max(R2)
-  ) %>% 
-  ungroup
-
-boldaic <- as.numeric(rownames(totab)[totab$minaic])
-boldgcv <- as.numeric(rownames(totab)[totab$mingcv])
-boldr2 <- as.numeric(rownames(totab)[totab$maxr2])
-
-totab <- totab %>% 
-  select(-minaic, -mingcv, -maxr2) %>% 
-  mutate(
-    station = ifelse(duplicated(station), '', station)
-  ) 
-
-tab <- flextable(totab) %>% 
-  set_header_labels(
-    station = 'Station', 
-    model = 'GAM', 
-    AIC = 'Delta AIC',
-    R2 = 'R-squared'
-  ) %>% 
-  colformat_num(j = 3, digits = 1) %>%
-  colformat_num(j = c(4, 5), digits = 2) %>% 
-  bold(i = boldaic, j = 'AIC') %>% 
-  bold(i = boldgcv, j = 'GCV') %>% 
-  bold(i = boldr2, j = 'R2') %>% 
-  border_remove() %>% 
-  hline_top(border = fp_border(color = 'black')) %>% 
-  font(fontname = 'Times', part = 'all') %>%
-  font(j = 2, fontname = 'Consolas') %>% 
-  fontsize(size = 12, part = 'all') %>% 
-  autofit()
-
-tab
-```
-
-```{r modprflogtab, tab.cap = 'Model performance statistics for each station and GAM structure (Table \\@ref(tab:modsumtab)). Results are for models of chlorophyll-a using logarithmic (base-10) ransformations. Three GAMs were fit to each station and performance is summarized as $\\Delta$ AIC (from `gam0`), GCV, and R-squared values.  Models with the lowest AIC, GCV and highest R-squared values for each station are emphasized. Probability values ("P-value") show the results of Analysis of Variance comparisons between all models at a station.  The p-value for a row refers to the comparison of the model in the current row to the one preceeding (`gam0` is the base model and does not have a p-value).  A significant p-value indicates the model in the current row provides a statistically significant difference in explaining chlorophyll variance from the model in the preceding row.  Values indicate ns for not significantly different at $\\alpha = 0.05$, * $p< 0.05$, and ** $p < 0.005$.', eval = F}
-totab <- modprf %>% 
-  filter(trans == 'log10') %>% 
-  select(-trans) %>% 
-  group_by(station) %>% 
-  mutate(
-    AIC = AIC - max(AIC),
-    minaic = AIC == min(AIC), 
-    mingcv = GCV == min(GCV),
-    maxr2 = R2 == max(R2)
-  ) %>% 
-  ungroup
-
-boldaic <- as.numeric(rownames(totab)[totab$minaic])
-boldgcv <- as.numeric(rownames(totab)[totab$mingcv])
-boldr2 <- as.numeric(rownames(totab)[totab$maxr2])
-
-totab <- totab %>% 
-  select(-minaic, -mingcv, -maxr2) %>% 
-  mutate(
-    station = ifelse(duplicated(station), '', station)
-  ) 
-
-tab <- flextable(totab) %>% 
-  set_header_labels(
-    station = 'Station', 
-    model = 'GAM', 
-    AIC = 'Delta AIC',
-    R2 = 'R-squared'
-  ) %>% 
-  colformat_num(j = 3, digits = 1) %>%
-  colformat_num(j = c(4, 5), digits = 2) %>% 
-  bold(i = boldaic, j = 'AIC') %>% 
-  bold(i = boldgcv, j = 'GCV') %>% 
-  bold(i = boldr2, j = 'R2') %>% 
-  border_remove() %>% 
-  hline_top(border = fp_border(color = 'black')) %>% 
-  font(fontname = 'Times', part = 'all') %>%
-  font(j = 2, fontname = 'Consolas') %>% 
-  fontsize(size = 12, part = 'all') %>% 
-  autofit()
-
-tab
-```
-
 
 # References
