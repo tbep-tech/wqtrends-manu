@@ -1,46 +1,62 @@
 # libraries
 library(tidyverse)
 library(wqtrends)
+library(mgcv)
 library(flextable)
 library(officer)
+library(lubridate)
 
 source('R/funcs.R')
 
-# model levels and labels
-modlvs <- c('gam1', 'gam2', 'gam6')
-modlbs <- c('Const seas', 'Int seas', 'Const seas*')
-names(modlvs) <- modlbs
+# chlorophyll models, model S only ----------------------------------------
 
-# best mod
-modbst <- modlbs[3]
+modssta <- rawdat %>% 
+  filter(param == 'chl') %>% 
+  group_by(station) %>% 
+  nest() %>% 
+  mutate(
+    model = purrr::pmap(list(station, data), function(station, data){
+      
+      cat(station, '\n')
+      moddat <- anlz_trans(data, trans = 'log10')
+      out <- gam(value ~ s(cont_year, k = 360),
+        knots = list(doy = c(1, 366)),
+        data = moddat,
+        na.action = na.exclude,
+        select = F)
+      
+      out$trans <- 'log10'
+      
+      return(out)
+      
+    })
+  )
 
-# # save all models with different naming convention ------------------------
-# 
-# mods <- list.files('data', pattern = '^mods\\_chl|modslog\\_chl', full.names = T)
-# 
-# for(mod in mods){
-#   
-#   cat(mod, '\t')
-#   
-#   load(file = mod)
-#   nm <- gsub('\\.RData$', '', basename(mod))
-#   dat <- get(nm)
-#   
-#   dat <- dat %>% 
-#     filter(model != 'gam0') %>% 
-#     mutate(
-#       model = factor(model, levels = modlvs, labels = modlbs)
-#     )
-#   
-#   assign(nm, dat)
-#   
-#   save(list = nm, file = mod, compress = 'xz')
-#     
-# }
+# separate models into diff files by stations
+tosv <- modssta %>% 
+  pull(station) %>% 
+  unique
+
+for(i in seq_along(tosv)){
+  
+  cat(i, 'of', length(tosv), '\n')
+  
+  sta <- tosv[i]
+  
+  fl <- modssta %>% 
+    filter(station %in% !!sta) 
+  
+  flnm <- paste0('modslog_chl', sta)
+  
+  assign(flnm, fl)
+  
+  save(list = flnm, file = paste0('data/', flnm, '.RData'), compress = 'xz')
+  
+}
 
 # model performance summaries ---------------------------------------------
 
-modprf <- list.files('data', pattern = '^mods\\_chl|modslog\\_chl', full.names = T) %>% 
+modprf <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>% 
   enframe() %>% 
   group_by(value) %>% 
   nest %>% 
@@ -53,18 +69,10 @@ modprf <- list.files('data', pattern = '^mods\\_chl|modslog\\_chl', full.names =
       nm <- gsub('\\.RData', '', nm)
       
       dat <- get(nm) %>% 
-        select(model, modi) %>% 
+        select(model) %>% 
         deframe()
       
-      trans <- lapply(dat, function(x) x$trans) %>% 
-        enframe('model', 'trans') %>%
-        unnest('trans') 
-  
-      prf <- anlz_fit(mods = dat)
-
-      out <- trans %>% 
-        left_join(prf, by = 'model') %>% 
-        mutate(trans = ifelse(is.numeric(trans), as.character(round(trans, 2)), trans))
+      out <- anlz_fit(mods = dat)
       
       return(out)
       
@@ -73,23 +81,16 @@ modprf <- list.files('data', pattern = '^mods\\_chl|modslog\\_chl', full.names =
   ungroup %>% 
   select(-data) %>% 
   unnest('prf') %>% 
-  select(-k, -F) %>% 
-  mutate(
-    value = gsub('^data/mods\\_chl|^data/modslog\\_chl|\\.RData$', '', value), 
-    p.value = p_ast(p.value), 
-    p.value = ifelse(is.na(p.value), '-', p.value), 
-    model = factor(model, levels = modlbs)
-  ) %>% 
+  select(-AIC, -k, -F, -p.value, -value) %>% 
   rename(
-    station = value, 
-    `P-value` = p.value
-    )
+    station = model
+  ) 
 
 save(modprf, file = 'data/modprf.RData', compress = 'xz')
 
 # seasonal trends by decade -----------------------------------------------
 
-seastrnd <- list.files('data', pattern = '^mods\\_chl', full.names = T) %>% 
+seastrnd <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>% 
   crossing(
     fl = ., 
     tibble(
@@ -110,19 +111,17 @@ seastrnd <- list.files('data', pattern = '^mods\\_chl', full.names = T) %>%
       
       nm <- basename(x)
       nm <- gsub('\\.RData', '', nm)
-      
-      out <- get(nm) %>% 
-        filter(model == !!modbst) %>% 
-        select(model, modi) %>% 
-        deframe()
+
+      out <- get(nm) %>%
+        pull(model)
       
       return(out)
       
     })
   ) %>% 
   unnest(c('data')) %>% 
-  group_by(doystr, doyend, mod, fl) %>% 
-  nest() %>% 
+  group_by(doystr, doyend, fl, mod) %>%
+  nest() %>%
   mutate(
     avgseas = purrr::pmap(list(mods = mod, doystr, doyend), anlz_avgseason)
   ) %>% 
@@ -146,7 +145,7 @@ seastrnd <- list.files('data', pattern = '^mods\\_chl', full.names = T) %>%
   ungroup %>% 
   select(station = fl, seas = doystr, yrs = yrstr, yrcoef, pval) %>% 
   mutate(
-    station = gsub('^data/mods\\_chl|\\.RData$', '', station),
+    station = gsub('^data/modslog\\_chl|\\.RData$', '', station),
     seas = factor(seas, levels = c('1', '91', '182', '274'), labels = c('JFM', 'AMJ', 'JAS', 'OND')), 
     yrs = case_when(
       yrs < 1995 ~ '1990-2000', 
@@ -161,7 +160,7 @@ save(seastrnd, file = 'data/seastrnd.RData', compress = 'xz')
 
 # seasonal trends by decade, jan-jul and aug-dec --------------------------
 
-seastrnd2 <- list.files('data', pattern = '^mods\\_chl', full.names = T) %>% 
+seastrnd2 <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>% 
   crossing(
     fl = ., 
     tibble(
@@ -184,9 +183,7 @@ seastrnd2 <- list.files('data', pattern = '^mods\\_chl', full.names = T) %>%
       nm <- gsub('\\.RData', '', nm)
       
       out <- get(nm) %>% 
-        filter(model == !!modbst) %>% 
-        select(model, modi) %>% 
-        deframe()
+        pull(model)
       
       return(out)
       
@@ -218,7 +215,7 @@ seastrnd2 <- list.files('data', pattern = '^mods\\_chl', full.names = T) %>%
   ungroup %>% 
   select(station = fl, seas = doystr, yrs = yrstr, yrcoef, pval) %>% 
   mutate(
-    station = gsub('^data/mods\\_chl|\\.RData$', '', station),
+    station = gsub('^data/modslog\\_chl|\\.RData$', '', station),
     seas = factor(seas, levels = c('41', '214'), labels = c('Jan-Jul', 'Aug-Dec')), 
     yrs = case_when(
       yrs < 1995 ~ '1990-2000', 
@@ -233,7 +230,7 @@ save(seastrnd2, file = 'data/seastrnd2.RData', compress = 'xz')
 
 # decadal percent changes -------------------------------------------------
 
-chgtrnd <- list.files('data', pattern = '^mods\\_chl', full.names = T) %>% 
+chgtrnd <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>% 
   crossing(
     fl = ., 
     tibble(
@@ -252,8 +249,7 @@ chgtrnd <- list.files('data', pattern = '^mods\\_chl', full.names = T) %>%
       nm <- gsub('\\.RData', '', nm)
 
       out <- get(nm) %>%  
-        select(model, modi) %>% 
-        deframe() 
+        pull(model)
       
       return(out)
       
@@ -266,9 +262,9 @@ chgtrnd <- list.files('data', pattern = '^mods\\_chl', full.names = T) %>%
   select(-mod) %>% 
   unnest('perchg') %>% 
   ungroup %>% 
-  select(station = fl, yrs = yrstr, model, perchg, pval) %>% 
+  select(station = fl, yrs = yrstr, perchg, pval) %>% 
   mutate(
-    station = gsub('^data/mods\\_chl|\\.RData$', '', station),
+    station = gsub('^data/modslog\\_chl|\\.RData$', '', station),
     yrs = case_when(
       yrs < 1995 ~ '1990, 2000', 
       yrs >=1995 & yrs < 2005 ~ '2000, 2010', 
@@ -282,10 +278,9 @@ chgtrnd <- list.files('data', pattern = '^mods\\_chl', full.names = T) %>%
 
 save(chgtrnd, file = 'data/chgtrnd.RData', compress = 'xz')
 
-
 # trend model comparisons -------------------------------------------------
 
-cmptrnd <- list.files('data', pattern = '^mods\\_chl', full.names = T) %>% 
+cmptrnd <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>% 
   crossing(
     fl = ., 
     tibble(
@@ -310,9 +305,7 @@ cmptrnd <- list.files('data', pattern = '^mods\\_chl', full.names = T) %>%
       nm <- gsub('\\.RData', '', nm)
       
       out <- get(nm) %>% 
-        filter(model == !!modbst) %>% 
-        select(model, modi) %>% 
-        deframe()
+        pull(model)
       
       return(out)
       
@@ -340,21 +333,21 @@ cmptrnd <- list.files('data', pattern = '^mods\\_chl', full.names = T) %>%
       return(out)
     }), 
     obstrnd = purrr::pmap(list(doystr, doyend, mod, yrstr, yrend), function(doystr, doyend, mod, yrstr, yrend){
-      trans <- mod[[1]]$trans
+
       moddat <- mod[[1]]$model %>% 
         mutate(
-          yr = floor(dec_time), 
-          value = case_when(
-            is.numeric(trans) ~ forecast::InvBoxCox(value, trans), 
-            trans == 'log10' ~ 10 ^ value
-          )
+          yr = floor(cont_year), 
+          doy = yday(date_decimal(cont_year)),
+          value = 10 ^ value
         ) %>% 
         filter(doy >= doystr & doy <= doyend) %>% 
         filter(yr >= yrstr & yr <= yrend) %>% 
         group_by(yr) %>%
         summarise(value = mean(value, na.rm = T), .groups = 'drop') 
       out <- lm(value ~ yr, moddat)
+      
       return(out)
+      
     })
   ) %>% 
   ungroup %>% 
@@ -380,7 +373,7 @@ cmptrnd <- list.files('data', pattern = '^mods\\_chl', full.names = T) %>%
   ) %>% 
   select(station = fl, seas = doystr, yrs = yrstr, mod, yrcoef, pval) %>% 
   mutate(
-    station = gsub('^data/mods\\_chl|\\.RData$', '', station),
+    station = gsub('^data/modslog\\_chl|\\.RData$', '', station),
     seas = factor(seas, levels = c('41', '214'), labels = c('Jan-Jul', 'Aug-Dec')),
     yrs = case_when(
       yrs < 1995 ~ '1990-2000', 
