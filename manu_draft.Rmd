@@ -336,130 +336,160 @@ dev.off()
 knitr::include_graphics('figs/sitemap.png')
 ```
 
-```{r, results = 'hide', eval = F}
-# get predictions for all three gams
-tomod <- rawdat %>%
-  filter(station %in% 22) %>%
-  filter(param %in% 'chl')
-
+```{r, results = 'hide'}
 # use previously fitted list of models
-trans <- 'boxcox'
-mods <- list(
-  `Const seas` = anlz_gam(tomod, mod = 'gam1', trans = trans),
-  `Int seas` = anlz_gam(tomod, mod = 'gam2', trans = trans),
-  `Const seas*` = anlz_gam(tomod, mod = 'gam6', trans = trans)
-)
+mods <- modstr[2:4]
 
-p1 <- show_prddoy(mods = mods, ylab = 'Chlorophyll-a (ug/L)', nfac = 3, size = 0.8, alpha = 0.8, faclev = modlbs) + 
-  theme(legend.position = 'right') + 
+thm <-theme_minimal() + 
+  theme(
+    legend.title = element_blank(),
+    legend.position = 'right'
+  )
+lncol <- 'tomato1'
+alph <- 0.5
+
+p1 <- show_prddoy(mods = mods, ylab = 'Chlorophyll-a (ug/L)', nfac = 3, size = 0.8, alpha = 0.8) + 
   guides(colour = ggplot2::guide_colourbar(barheight = 15, barwidth = 1)) +
   scale_colour_gradient(low = "white", high = "black") + 
-  theme_minimal() + 
-  theme(
-    legend.title = element_blank()
+  thm + 
+  labs(
+    title = '(a) Model predictions by day of year'
   )
 
-png('figs/modsumfig.png', height = 2.5, width = 6, units = 'in', family = 'serif', res = 400)
-print(p1)
+prds <- anlz_prd(mods = mods, trans = 'log10')
+
+toplo2 <- prds %>% 
+  select(model, date, value) %>% 
+  spread(model, value)
+
+toplo3 <- prds %>% 
+  select(model, date, annvalue) %>% 
+  spread(model, annvalue)
+
+p2a <- ggplot(toplo2, aes(x = SY, y = SYD)) + 
+  geom_point(alpha = alph) + 
+  geom_abline(slope = 1, intercept = 0, color = lncol) + 
+  thm + 
+  labs(
+    title = '(b) Estimated chlorophyll (log-space) between models'
+  )
+p2b <- ggplot(toplo2, aes(x = SYD, y = SYDI)) + 
+  geom_point(alpha = alph) + 
+  geom_abline(slope = 1, intercept = 0, color = lncol) + 
+  thm
+p2c <- ggplot(toplo2, aes(x = SY, y = SYDI)) + 
+  geom_point(alpha = alph) + 
+  geom_abline(slope = 1, intercept = 0, color = lncol) + 
+  thm
+
+p2 <- p2a + p2b + p2c + plot_layout(ncol = 3)
+
+
+p3a <- ggplot(toplo3, aes(x = SY, y = SYD)) + 
+  geom_point(alpha = alph) + 
+  geom_abline(slope = 1, intercept = 0, color = lncol) + 
+  thm +
+  labs(
+    title = '(c) Estimated s(cont_year) between models'
+    )
+p3b <- ggplot(toplo3, aes(x = SYD, y = SYDI)) + 
+  geom_point(alpha = alph) + 
+  geom_abline(slope = 1, intercept = 0, color = lncol) + 
+  thm
+p3c <- ggplot(toplo3, aes(x = SY, y = SYDI)) + 
+  geom_point(alpha = alph) + 
+  geom_abline(slope = 1, intercept = 0, color = lncol) + 
+  thm
+
+p3 <- p3a + p3b + p3c + plot_layout(ncol = 3)
+
+out <- p1 / p2 / p3
+png('figs/modsumfig.png', height = 7, width = 8, units = 'in', family = 'serif', res = 400)
+print(out)
 dev.off()
 ```
-```{r modsumfig, fig.cap = "General output for each of the GAM structures for constant season, interactive season, and constant season*.  Day of year (Julian) is on the x-axis and each curve represents a different fitted year for chlorophyll concentration.", eval = F}
+```{r modsumfig, fig.cap = "GAM output of estimated chlorophyll for models SY, SYD, and SYDI.  Model S is identical to SY and is not shown.  Plots in (a) show model predictions by day of year with separate lines for each year.  Plots in (b) show pairwise comparisons of predicted chlorophyll between the models and plots in (c) show the same comparisons as in (b) but only for results from the esimated smoother for the `cont_year` variable.  The plots demonstrate that results between the models are comparable except for a few observations at extreme values(a), but they vary in the penalties applied to the basis functions for any particular smoother depending on which additive components are included in each model (b).  The 1:1 lines are in red to faciliate comparisons."}
 knitr::include_graphics('figs/modsumfig.png')
 ```
 
-```{r, results = 'hide', message = F, eval = F}
+```{r, results = 'hide', message = F}
 # get predictions to plot
-prdplo <- bind_rows(modslog_chl18, modslog_chl24, modslog_chl27, modslog_chl32) %>% 
-  mutate(prddat = pmap(list(data, model), function(data, model){
+modprds <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>% 
+  enframe() %>% 
+  group_by(value) %>% 
+  nest %>% 
+  mutate(
+    prd = purrr::map(value, function(x){
+      
+      load(file = x)
+      
+      nm <- basename(x)
+      nm <- gsub('\\.RData', '', nm)
 
-    prddat <- data.frame(
-        dec_time = seq(min(data$dec_time), max(data$dec_time), length = 1000)
-      ) %>%
-      mutate(
-        date = date_decimal(dec_time),
-        date = as.Date(date),
-        mo = month(date, label = TRUE),
-        doy = yday(date),
-        yr = year(date)
-      )
-    
-    prd <- predict(model, newdata = prddat) %>% 
-      as.numeric
-    
-    annprd <- predict(model, newdata = prddat, type = 'terms')
-    int <- attr(annprd, 'constant')
-    value <- rowSums(annprd) + int
-    annvalue <- rowSums(annprd[, !grepl('doy', colnames(annprd)), drop = FALSE]) + int
-    annvalue <- as.numeric(annvalue)
-    
-    trans <- unique(model$trans)
-    
-    if(!inherits(trans, 'numeric'))
-      stop('log used')
-    
-    prddat <- prddat %>% 
-      mutate(
-        chl = prd,
-        chl = forecast::InvBoxCox(chl, trans), 
-        annchl = forecast::InvBoxCox(annvalue, trans)
-        )
-    
-    return(prddat)
-    
-  })) %>% 
-  select(station, model = model, prddat) %>% 
-  unnest(prddat) 
+      mod <- get(nm) %>% 
+        pull(model)
+      
+      prd <- anlz_prd(mods = mod) %>% 
+        anlz_backtrans()
+      
+      return(prd)
+      
+    })
+  ) %>% 
+  ungroup %>% 
+  select(station = value, prd) %>% 
+  mutate(
+    station = gsub('^data/modslog\\_chl|\\.RData$', '', station)
+  ) %>% 
+  unnest('prd')
 
-ylab <- expression(paste("Chlorophyll-a (", mu, "g ", L^-1, ")"))
+modobs <- rawdat %>% 
+  filter(param == 'chl')
+ylab <- 'Chlorophyll-a (ug/L)'
 
-toplo <- prdplo %>% 
-  filter(yr >= 1991)
-
-obsdat <- rawdat %>% 
-  filter(station %in% c(18, 24, 27, 32)) %>% 
-  filter(param == 'chl') %>% 
-  filter(yr >= 1991) %>% 
-  rename(chl = value)
-
-colpal <- "PuBuGn"
-
-p1 <- ggplot(toplo, aes(x = date, y = chl)) + 
-  geom_point(data = obsdat, color = 'grey', size = 0.15) + 
-  geom_line(size = 0.5) +
-  geom_line(aes(y = annchl), color = 'tomato1', size = 0.5, alpha = 0.9) +
-  theme_minimal(base_family = 'serif') + 
-  theme(
-    legend.position = 'right', 
-    legend.title = element_blank(), 
-    # axis.text.x= element_text(size = 8)
-    strip.background = element_blank()
+p1 <- ggplot2::ggplot(modprds, ggplot2::aes(x = date)) + 
+  ggplot2::geom_point(data = modobs, ggplot2::aes(y = value), size = 0.5, colour = 'grey') +
+  ggplot2::geom_line(ggplot2::aes(y = value), size = 0.75, alpha = 0.7) + 
+  ggplot2::facet_grid(station~.) +
+  ggplot2::scale_color_viridis_d() + 
+  ggplot2::theme_minimal(base_family = 'serif', base_size = 14) + 
+  ggplot2::scale_y_log10() +
+  ggplot2::theme(
+    legend.position = 'top', 
+    legend.title = ggplot2::element_blank(),
+    strip.background = ggplot2::element_blank()
   ) + 
-  facet_grid(model ~ station) +
-  scale_y_log10(limits = c(0.74, 83)) + 
-  labs(x = 'Date', subtitle = '(a) Model predictions with annual estimates', y = ylab)
+  ggplot2::labs(
+    y = ylab,
+    x = 'Continuous year', 
+    subtitle = '(a) Continous predictions'
+  )
 
-p2 <- ggplot(toplo, aes(x = doy, colour = yr, group = factor(yr))) + 
-  geom_line(aes(y = chl)) + 
-  theme_minimal(base_family = 'serif') + 
-  theme(
-    legend.position = 'right', 
-    legend.title = element_blank(), 
-    # axis.text.x= element_text(size = 8)
-    strip.background = element_blank()
-  ) + 
-  scale_colour_continuous_sequential(palette = colpal, rev = T, begin = 0.2) +
-  guides(colour = guide_colourbar(barheight = 10, barwidth = 1)) +
-  facet_grid(model ~ station) +
-  scale_y_log10() + 
-  labs(x = 'Day of year', subtitle = '(b) Model predictions by day of year', y = ylab)
-
-p <- p1 + p2 + plot_layout(ncol = 1)
+ p2 <- ggplot2::ggplot(modprds, ggplot2::aes(x = doy, group = factor(yr), colour = yr)) + 
+    ggplot2::geom_line(ggplot2::aes(y = value), size = 0.5, alpha = 1) + 
+    ggplot2::theme_minimal(base_family = 'serif', base_size = 14) + 
+    ggplot2::theme(
+      legend.position = 'right', 
+      legend.title = ggplot2::element_blank(), 
+      strip.background = ggplot2::element_blank(), 
+      strip.text = ggplot2::element_blank(), 
+      axis.title.y = ggplot2::element_blank()
+    ) + 
+    ggplot2::scale_colour_gradient(low = "white", high = "black") + 
+    ggplot2::facet_grid(station ~ .) +
+    ggplot2::scale_y_log10() +
+    ggplot2::guides(colour = ggplot2::guide_colourbar(barheight = 20, barwidth = 1)) +
+    ggplot2::labs(
+      x = "Day of year", 
+      subtitle = '(b) Day of year\npredictions'
+    )
+p <- p1 + p2 + plot_layout(ncol = 2, width = c(1, 0.4))
 
 png('figs/prddat.png', height = 10, width = 9, family = 'serif', units = 'in', res = 400)
 print(p)
 dev.off()
 ```
-```{r prddat, fig.cap = "GAM predictions for select stations from north to south (18, 24, 27, 32) for each of the GAM structures for constant season, interactive season, and constant season*. The results show (a) predictions across the time series with annual estimates (red line) and (b) predictions by day of year with one smooth per year.  Observed data in (a) are shown with the gray points. Station locations are in Figure \\@ref(fig:sitemap).", eval = F}
+```{r prddat, fig.cap = "GAM predictions for all stations from north to south for model S. The results show (a) predictions across the time series and (b) predictions by day of year.  Observed data in (a) are shown with the gray points. Station locations are in Figure \\@ref(fig:sitemap)."}
 knitr::include_graphics('figs/prddat.png')
 ```
 
@@ -607,7 +637,7 @@ png('figs/trndmap.png', height = 10, width = 6.5, family = 'serif', units = 'in'
 p
 dev.off()
 ```
-```{r trndmap, fig.cap= "Trend estimates (a) between year pairs and (b) across seasons by decade for chlorophyll at each station.  The top plots show percent change comparing the first and last year within a decade and the bottom plots show seasonal estimates of change per year for chlorophyll concentrations for each decade.  Point type, shape, and color represent the direction and magnitude of an estimated trend.  Trends with $p<0.05$ are marked with an asterisk.  All results are from `Const seas*`."}
+```{r trndmap, fig.cap= "Trend estimates (a) between year pairs and (b) across seasons by decade for chlorophyll at each station.  The top plots show percent change comparing the first and last year within a decade and the bottom plots show seasonal estimates of change per year for chlorophyll concentrations for each decade.  Point type, shape, and color represent the direction and magnitude of an estimated trend.  Trends with $p<0.05$ are marked with an asterisk.  All results are from Model `S`."}
 knitr::include_graphics('figs/trndmap.png')
 ```
 
