@@ -229,6 +229,53 @@ seastrnd2 <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
 
 save(seastrnd2, file = 'data/seastrnd2.RData', compress = 'xz')
 
+
+# moving window seasonal changes ------------------------------------------
+
+seastrnd3 <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>% 
+  crossing(
+    fl = ., 
+    tibble(
+      doystr = c(41, 214), 
+      doyend = c(213, 338)
+    )
+  ) %>% 
+  group_by(fl) %>% 
+  nest() %>% 
+  mutate(
+    mod = purrr::map(fl, function(x){
+      
+      load(file = x)
+      
+      nm <- basename(x)
+      nm <- gsub('\\.RData', '', nm)
+      
+      out <- get(nm) %>% 
+        pull(model)
+      
+      return(out)
+      
+    })
+  ) %>% 
+  unnest(c('data')) %>% 
+  group_by(doystr, doyend, mod, fl) %>% 
+  nest() %>% 
+  mutate(
+    res = purrr::pmap(list(fl, mods = mod, doystr, doyend), function(fl, mods, doystr, doyend){
+      
+      # get slope trends
+      out <- anlz_trndseason(mods = mod[[1]], doystr = doystr, doyend = doyend, justify = 'center', win = 5)
+      
+      return(out)
+      
+    })
+  ) %>% 
+  unnest(res) %>%
+  ungroup() %>% 
+  select(-mod, -data)
+
+save(seastrnd3, file = 'data/seastrnd3.RData', compress = 'xz')
+
 # decadal percent changes -------------------------------------------------
 
 chgtrnd <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>% 
