@@ -105,7 +105,7 @@ The three-stage approach is motivated in several ways.  In the first stage, the 
 
 Generalized additive models use sums of parametric terms (e.g., linear) and non-parametric terms (e.g., smoothing splines) to predict response data. In our approach, GAMs are used to estimate signal and uncertainty from the time-series data.  Results are subsequently used in the second-stage analysis, described below.  
 
-In this section we describe four GAM formulations that can achieve the same or similar fits to data in slightly different ways.  We present these to clarify relationships that may otherwise be confusing and to emphasize that results can be similarly achieved if a model unconstrained to have sufficient capability to extract a signal from raw data. Models will be written in the notation of the `mgcv` R package as formulas for the `gam` function [@Wood17]. 
+In this section we describe four GAM formulations that can achieve the same or similar fits to data in slightly different ways (Table \@ref(tab:modsumtab)).  We present these to clarify relationships that may otherwise be confusing and to emphasize that results can be similarly achieved if a model unconstrained to have sufficient capability to extract a signal from raw data. Models will be written in the notation of the `mgcv` R package as formulas for the `gam` function [@Wood17]. 
 
 The fundamental goal is to smooth the raw data across time to separate a signal of response variable from noise. The simplest GAM for this purpose can be expressed as:
 
@@ -119,7 +119,7 @@ The next three spline formulations differ in how spline terms compose a model to
 
 Model SY: `y ~ cont_year + s(cont_year, k = num_knots_Y)`
 
-This model is effectively and mathematically equivalent to model S.  The spline for `cont_year` includes an unpenalized linear trend, so a trend will be estimated in model S.  When `cont_year` is included explicitly as a linear term in model SY, the `mgcv` implementation automatically adjusts the basis functions for the spline to exclude the linear term, to avoid over-parameterizing the model.  With model S, the estimated trend in `cont_year` and its uncertainty can be extracted from the fitted spline.  With model SY, it is available more conveniently.  Further, package `mgcv` includes an option `select = TRUE` to penalize linear trends in splines to provide a method for variable selection, such as when numerous splines are included in the model formulation for variables that may or may not be important.  For our approach, this option is not used and all models specify `select = FALSE`.  Details in the supplement explain this justification. 
+This model is effectively and mathematically equivalent to model S (Table \@ref(tab:modstrtab)).  The spline for `cont_year` includes an unpenalized linear trend, so a trend will be estimated in model S.  When `cont_year` is included explicitly as a linear term in model SY, the `mgcv` implementation automatically adjusts the basis functions for the spline to exclude the linear term, to avoid over-parameterizing the model.  With model S, the estimated trend in `cont_year` and its uncertainty can be extracted from the fitted spline.  With model SY, it is available more conveniently.  Further, package `mgcv` includes an option `select = TRUE` to penalize linear trends in splines to provide a method for variable selection, such as when numerous splines are included in the model formulation for variables that may or may not be important.  For our approach, this option is not used and all models specify `select = FALSE`.  Details in the supplement explain this justification. 
 
 Next, an average within-year cyclic pattern as a separate spline can be separated in the model formulation.  This can be expressed as:
 
@@ -127,7 +127,7 @@ Model SYD: `y ~ cont_year + s(cont_year, k = num_knots_Y) + s(doy, bs = 'cc', k 
 
 Here `doy` is "day-of-year" (i.e., Julian date, a count starting January 1 for each year), `bs = 'cc'` indicates the spline will be cyclic (constrained to start and end at the same value), and `num_knots_D` is the upper limit for the number of knots for the `doy` spline.  While model SYD is not mathematically equivalent to models S and SY, it should be functionally similar.  In this model, the `doy` spline gives the average pattern of fluctuations within each year.  This changes the interpretation of the `cont_year` spline to represent smoothed deviations from the average within-year pattern.
 
-Models S, SY, and SYD can all potentially extract a similar signal from the raw data.  What differs between the models is the allocation of penalties for curvature used to determine smoothness for each spline.  In model SYD, there are separate penalties for the two splines, as compared to S and SY that include penalties only for the `cont_year` spline.  Caution is needed in interpreting differences in fit between model SYD and models S or SY because the penalties for smoothing splines based on curvature are heuristic [@Wood17]. For example, if a lower AIC is achieved in one model compared to another, assuming both use sufficient knots, this may just reflect the outcome of alternative penalization heuristics implied by the different formulations. In the examples here, model SYD achieves nearly identical fits to model S or SY, where the latter by definition also achieve identical fits.
+Models S, SY, and SYD can all potentially extract a similar signal from the raw data (Table \@ref(tab:modstrtab)).  What differs between the models is the allocation of penalties for curvature used to determine smoothness for each spline.  In model SYD, there are separate penalties for the two splines, as compared to S and SY that include penalties only for the `cont_year` spline.  Caution is needed in interpreting differences in fit between model SYD and models S or SY because the penalties for smoothing splines based on curvature are heuristic [@Wood17]. For example, if a lower AIC is achieved in one model compared to another, assuming both use sufficient knots, this may just reflect the outcome of alternative penalization heuristics implied by the different formulations. In the examples here, model SYD achieves nearly identical fits to model S or SY, where the latter by definition also achieve identical fits.
 
 Model SYD has the appealing feature that, if some parts of some years have limited data, model SYD will "borrow information" across years.  The model will impute an average seasonal pattern where data are limited. However, a conceptual representation of what an average within-year pattern represents is challenging.  For example, suppose a spring chlorophyll peak is a notable feature in every year.  If the timing is the same in every year whereas the magnitudes vary, then the average within-year pattern will have an average magnitude thta appears as a "typical" year.  However, if the magnitude is the same and the timing varies across years, then the average within-year pattern will not appear typical.  The imputed values will represent a day-by-day average, appearing more spread out in time than the pattern in any single year.
 
@@ -135,17 +135,19 @@ More importantly, the average within-year pattern (and its uncertainty) can be o
 
 Finally, the raw data can be smoothed using a bivariate spline representing an interaction between `cont_year` and `doy`. This can be expressed as:
 
-Model SYDI: `y ~ cont_year + s(cont_year) + s(doy, bs = "cc") + ti(cont_year, doy, bs = c("tp", "cc"), k = c(num_knots_Y_ti, num_knits_D_ti))`
+Model SYDI: `y ~ cont_year + s(cont_year) + s(doy, bs = "cc") + ti(cont_year, doy, bs = c("tp", "cc"), k = c(num_knots_Y_ti, num_knots_D_ti))`
 
-Here, `ti()` specifies a tensor-product spline for a surface that varies smoothly as a function of both `cont_year` and `doy`.  The number of knots is the product of `num_knots_Y_ti` in the `cont_year` axis and `num_knots_D_ti` in the `doy` axis.  In SYDI, the need for sufficient knots can be satisfied either by sufficiently large values for `num_knots_Y_ti` and `num_knits_D_ti` or a sufficiently large value for knots in `s(cont_year)`, but not both to avoid over-parameterization.
+Here, `ti()` specifies a tensor-product spline for a surface that varies smoothly as a function of both `cont_year` and `doy`.  The number of knots is the product of `num_knots_Y_ti` in the `cont_year` axis and `num_knots_D_ti` in the `doy` axis.  In SYDI, the need for sufficient knots can be satisfied either by sufficiently large values for `num_knots_Y_ti` and `num_knots_D_ti` or a sufficiently large value for knots in `s(cont_year)`, but not both to avoid over-parameterization.
 
 Following similar rationale above, the relationship of model SYDI to model S is similar to that of model SYD to model S.  Model SYDI is more mathematically different, but all of the splines use the same inputs to smooth the same data.  The splines in `cont_year` and `doy` will likely not capture as much variation as above because of fewer knots.  The `ti` term represents an interaction by allowing the pattern in `cont_year` to vary by `doy` and vice-versa.  The interaction term in model SYDI provides an appearance that this model is fundamentally different from those provided by the other models.  However, models S, SY, and SYD all allow within-year fluctuations to vary across years by allowing a spline to be fit through the entire time-series.  Although model SYDI is the only model that includes an explicit interaction term, all of the models support the interaction conceptually. By providing this term with sufficient knots, the raw data can be fully smoothed with model SYDI to a similar degree as for the other models.  However, this outcome is difficult to achieve for reasons explained below.
 
-The distinct aspect of model SYDI is the anticipation that within-year fluctuations will vary smoothly across years.  For example, if one year has an early and large magnitude spring bloom, the years before and after would have similar patterns described by the model, perhaps different but not substantially. For the raw San Francisco Bay data, this may not be the case, as one year might have an early, high spring bloom and the next year a late, low spring bloom, or other such large variation across years.  If the interaction spline has sufficient knots, then the degree of smoothness across years can be estimated to be very low, allowing fluctuations within years to vary strongly across years.  However, if that is the case, the conceptual motivation for model SYDI may not be justified.  In summary, model SDYI may best be suited for systems where within-year fluctuations actually vary smoothly across years, in which case it may out-perform the other models.  If that is not the case, it may perform similarly to the others, but the spline structure and penalty structure are more different, making performance harder to compare.
+The distinct aspect of model SYDI is the anticipation that within-year fluctuations will vary smoothly across years.  For example, if one year has an early and large magnitude spring bloom, the years before and after would have similar patterns described by the model, perhaps different but not substantially. For the raw San Francisco Bay data, this may not be the case, as one year might have an early, high spring bloom and the next year a late, low spring bloom, or other such large variation across years.  If the interaction spline has sufficient knots, then the degree of smoothness across years can be estimated to be very low, allowing fluctuations within years to vary strongly across years.  However, if that is the case, the conceptual motivation for model SYDI may not be justified.  In summary, model SDYI may best be suited for systems where within-year fluctuations actually vary smoothly across years, in which case it may out-perform the other models.  If that is not the case, it may perform similarly to the others, but the spline structure and penalty structure are more different, making performance harder to compare (Table \@ref(tab:modstrtab)).
 
 All of the models require a sufficiently large number of knots in one or more of the spline terms to accommodate the fluctuations in the data and use the GAM estimation methods in the manner for which they were designed.  In models S, SY, and SYD, the number of knots in the `cont_year` term need to be sufficiently large.  In model SYDI, a very large number of knots in both the `cont_year` spline *and* in both dimensions of the interaction spline is impossible to achieve.  Allowing the `cont_year` spline to include many knots would somewhat defeat the purpose of the interaction spline.  In practice, allocation of knots between the different splines can be chosen by the analyst so long as it is recognized that different choices will arbitrarily lead to more variation being explained between the splines.
 
-@Murphy19 used a related set of spline formulations but used them differently than we do here. @Murphy19 have a "`gam0`" with only a `s(doy)` term, a "`gam1`" like our SYD, and a "`gam2`" like our SYDI.  Their `gam0` is *a priori* not of interest for our data and was not explored further.  Compared to our uses of SYD and SYDI, their uses differ in choice of knots and interpretation of results.  For SYD, they set a maximum number of knots in the `s(cont_year)` term of 2/3 times the number of years, whereas we use 12 times the number of years, roughly one per month.  Thus, they interpret this spline as separating a long-term (or low-frequency) trend from other patterns, whereas we use it to separate signal from noise at a scale informed by the data.  In the SYDI model, @Murphy19 do not explicitly consider number of knots in the interaction spline.  In both cases, @Murphy19 in effect use choice of number of knots in different spline components to serve as ad hoc allocation of variation in the data to different components while not necessarily allowing any component to fully estimate the signal in the data. @Murphy19 acknowledge that incomplete modeling of fluctuations in the data may lead to inflated Type I error rates, which would apply to their later comparisons of changes across time, but they leave that problem for future work.  For the methods presented here, we seek to avoid inflated Type I error rates arising in this way.  Finally, @Murphy19 present large AIC differences between their spline formulations.  We instead emphasize that, given sufficient knots, the models represent alternative formulations of conceptually similar explanations for the data and yield similar fits.  In our example, such large differences in AIC would only reflect inadequate choice of knots in one or more splines. 
+@Murphy19 used a related set of spline formulations but used them differently than we do here. @Murphy19 have a "`gam0`" with only a `s(doy)` term, a "`gam1`" like our SYD, and a "`gam2`" like our SYDI.  Their `gam0` is *a priori* not of interest for our data and was not explored further.  Compared to our uses of SYD and SYDI, their uses differ in choice of knots and interpretation of results.  For SYD, they set a maximum number of knots in the `s(cont_year)` term of 2/3 times the number of years, whereas we use 12 times the number of years, roughly one per month.  Thus, they interpret this spline as separating a long-term (or low-frequency) trend from other patterns, whereas we use it to separate signal from noise at a scale informed by the data.  In the SYDI model, @Murphy19 do not explicitly consider number of knots in the interaction spline.  In both cases, @Murphy19 in effect use choice of number of knots in different spline components to serve as ad hoc allocation of variation in the data to different components while not necessarily allowing any component to fully estimate the signal in the data. @Murphy19 acknowledge that incomplete modeling of fluctuations in the data may lead to inflated Type I error rates, which would apply to their later comparisons of changes across time, but they leave that problem for future work.  For the methods presented here, we seek to avoid inflated Type I error rates arising in this way.  Finally, @Murphy19 present large AIC differences between their spline formulations.  We instead emphasize that, given sufficient knots, the models represent alternative formulations of conceptually similar explanations for the data and yield similar fits (Table \@ref(tab:modstrtab)).  In our example, such large differences in AIC would only reflect inadequate choice of knots in one or more splines. 
+
+We present a simple visual comparison of chlorophyll estimates from models SY, SYD, and SYDI to emphasize that similar fits can be achieved by all of the presented models (Figure \@ref(fig:modsumfig), S is identical to SY and is not shown).  Models SY, SYD, and SYDI were fit to chlorophyll data from station 34 using large k values for the arguments `num_knots_y`, `num_knots_D`, `num_knots_Y_ti`, and `num_knots_D_ti` for each model.  Model predictions by day of year are visually similar between the models (Figure \@ref(fig:modsumfig)a) and are very similar when compared to a 1:1 line (Figure \@ref(fig:modsumfig)b).  However, when comparing similarities among the models using only the continuous year smoother (`s(cont_year)`, as an eexample), the models differ substantially (Figure \@ref(fig:modsumfig)) because of structural differences and differences in the penalties applied to te basis functions.  These results are also demonstrated in differences between the effective degrees of freedom among the additive components of each model in Table \@ref(tab:modstrtab). Accordingly, the models may differ in which structural component describes variation in the chlorophyll time series but the model predictions are very similar. 
 
 ### Second-stage analysis: Uncertainty propagation from estimated GAMs to seasonal features
 
@@ -205,42 +207,31 @@ As a final analysis, the chosen windows for evaluating a trend for a seasonal av
 
 # Results
 
-<!-- ## Model performance and observed results -->
+## Model performance and observed results
 
-<!-- ```{r} -->
-<!-- aver2 <- round(100 * mean(modprf$R2), 0) -->
-<!-- minr2 <- round(100 * min(modprf$R2), 0) -->
-<!-- maxr2 <- round(100 * max(modprf$R2), 0) -->
-<!-- minst <- modprf$station[which.min(modprf$R2)] -->
-<!-- minstmod <- modprf$model[which.min(modprf$R2)] -->
-<!-- minsttrn <- modprf$trans[which.min(modprf$R2)] -->
-<!-- minsttrn <- ifelse(is.numeric(minsttrn), 'Box-Cox model', 'log-model') -->
-<!-- maxst <- modprf$station[which.max(modprf$R2)] -->
-<!-- maxstmod <- modprf$model[which.max(modprf$R2)] -->
-<!-- maxsttrn <- modprf$trans[which.max(modprf$R2)] -->
-<!-- maxsttrn <- ifelse(is.numeric(maxsttrn), 'Box-Cox model', 'log-model') -->
-<!-- avecsr2 <- modprf %>% filter(model %in% 'Const seas') %>% pull(R2) %>% mean %>% '*'(100) %>% round(0) -->
-<!-- logr2 <- modprf %>% filter(grepl('^log10$', trans)) %>% pull(R2) %>% mean %>% '*'(100) %>% round(0) -->
-<!-- bxcxr2 <- modprf %>% filter(!grepl('^log10$', trans)) %>% pull(R2) %>% mean %>% '*'(100) %>% round(0) -->
-<!-- ``` -->
+```{r, eval = T}
+aver2 <- round(100 * mean(modprf$R2), 0)
+minr2 <- round(100 * min(modprf$R2), 0)
+maxr2 <- round(100 * max(modprf$R2), 0)
+minst <- modprf$station[which.min(modprf$R2)]
+maxst <- modprf$station[which.max(modprf$R2)]
+```
 
-<!-- A total of six models (three GAM structures, two link functions) were fit to each of nine stations, producing summary statistics for 18 different models (Table \@ref(tab:modprftab)).  Chlorophyll trends were generally well-explained across all models and stations, with an average R-squared value equal to `r aver2`% and ranging from `r minr2`% (`r minstmod` `r minsttrn` at station `r minst`) to `r maxr2`% (`r maxstmod` `r maxsttrn` at station `r maxst`). The constant season model had the worst performance for all stations (average R$^2$ `r avecsr2`%), with either the interactive season or constant season* model having improved measures of model fit.  For all but stations 18 and 22, the constant season* model provided significantly lower AIC and GCV scores and higher R-squared values compared to the interactive season models.  For station 18, the interactive season and constant season* models provided only a marginal improvement over the constant season model.  For station 22, the interactive season and constant season* models provided similar but much improved fit to the data as compared to the constant season model.  Moeel performance comparing either Box-Cox or logarithmic link functions were similar (average R$^2$ values of `r bxcxr2`% and `r logr2`% respectively), although the logarithmic models had slightly improved model performance. Station 18 was the only location where the three GAM models were not significantly different from each other for the Box-Cox transformation. -->
+For all results, model S was used with a sufficiently high number of knots in `num_knots_y` to evaluate chlorophyll trends across the monitoring stations in South San Francisco Bay.  This model was chosen among the others because of the relatively quicker processing time to fit the model, while providing nearly identical explanatory power as compared to the other models (Table \@ref(tab:modstrtab)). Chlorophyll trends were generally well-explained across all stations (Table \@ref(tab:modprftab)), with an average R-squared value equal to `r aver2`% and ranging from `r minr2`% (station `r minst`) to `r maxr2`% (station `r maxst`). GAM predictions from north to south on the longitudinal axis provided different descriptions of annual and seasonal changes in chlorophyll (Figure \@ref(fig:prddat)). All models suggested an increase in chlorophyll in the period of record from 1990 to approximately 2005 to 2010, when predictions suggested a decreasing trend until the end of the record. Seasonally, all models indicated a larger spring peak in chlorophyll with more southern stations, whereas a subsequent peak in fall concentrations did not have any noticeable difference in magnitude by location (Figure \@ref(fig:prddat)).  
 
-<!-- GAM predictions from north to south on the longitudinal axis provided different descriptions of annual and seasonal changes in chlorophyll.  Four representative stations are shown in Figure \@ref(fig:trnddat) that capture spatial variation in chlorophyll and different temporal trends described by the models.  All models suggested an increase in chlorophyll in the period of record from 1990 to approximately 2005 to 2010, when predictions suggested a decreasing trend until the end of the record. Seasonally, all models indicated a larger spring peak in chlorophyll with more southern stations, whereas a subsequent peak in fall concentrations did not have any noticeable difference in magnitude by location.  However, the magnitude of the fall peak at more southern stations shifted over time depending on the model.  In particular, the interactive season model indicates a shift in the magnitude of the fall peak at stations 24, 27, and 32 with maximum concentrations observed around the mid-early 2000s. The annual trends for all models suggested similar trends over time, i.e., an increase followed by a recent decrease, whereas the constant season* models with an unconstrained smoother on the `decYear` predictor varied considerably at station 24, 27, and 32. Annual trends at these stations were difficult to generalize and had substantial overlap with the seasonal trends.  Conversely, station 18 had minimal visual differences in annual and seasonal trends across all models, which is reflected by similarities in the model performance statistics in Table \@ref(tab:modprftab). -->
+## Trend estimates
 
-<!-- ## Trend estimates -->
+Examples of results provided by the trend tests are shown for station 34, with estimates of percent change between year pairs and seasonal trend results for January to June and July to December (Figure \@ref(fig:trnddat)).  This figure illustrates the narrative descriptions that can be obtained for each test and the differences that can be observed depending on season.  Figures \@ref(fig:trnddat)a-c demonstrate that average chlorophyll at station 34 from 1990 to 2000 had a 57.7% increase, although the change is insignificant.  However, the change from 2000 to 2010 was statistically significant with an increase of 78%.  The period from 2010 to 2017 showed a significant decrease of 39.8%.  An assessment of the annual differences indicated if changes overall were observed, but provides no information on seasonal shifts that may have contributed to these differences. The results in figure \@ref(fig:trnddat)d-i show results from mixed-meta regression analysis to indicate which seasonal changes were contributing to the annual differences. Rows d-f show the seasonal averages and trend estimates for the same year periods in rows a-c, but only for months from January to July.  Similarly, rows g-i show the seasonal averages and trend estimates from August to December.  The seasonal trend results suggested that the increase in annual averages from 2000 to 2010 was likely caused by an increase in chlorophyll values in the fall (Figure \@ref(fig:trnddat)h).  Seasonal changes from 2010 to 2017 showed that neither the January to July nor August to December changes were significant, suggesting an overall decrease in chlorophyll across all seasons may have recently occurred.
 
-<!-- Examples of results provided by the trend tests are shown for station 34, with estimates of percent change between year pairs and seasonal trend results for January to July and August to December (Figure \@ref(fig:trnddat)).  This figure illustrates the narrative descriptions that can be obtained for each test and the differences that can be observed depending on season.  Figures \@ref(fig:trnddat)a-c demonstrate that average chlorophyll at station 34 from 1990 to 2000 had a 57.7% increase, although the change is insignificant.  However, the change from 2000 to 2010 was statistically significant with an increase of 78%.  The period from 2010 to 2017 showed a significant decrease of 39.8%.  An assessment of the annual differences indicated if changes overall were observed, but provides no information on seasonal shifts that may have contributed to these differences. The results in figure \@ref(fig:trnddat)d-i show results from mixed-meta regression analysis to indicate which seasonal changes were contributing to the annual differences. Rows d-f show the seasonal averages and trend estimates for the same year periods in rows a-c, but only for months from January to July.  Similarly, rows g-i show the seasonal averages and trend estimates from August to December.  The seasonal trend results suggested that the increase in annual averages from 2000 to 2010 was likely caused by an increase in chlorophyll values in the fall (Figure \@ref(fig:trnddat)h).  Seasonal changes from 2010 to 2017 showed that neither the January to July nor August to December changes were significant, suggesting an overall decrease in chlorophyll across all seasons may have recently occurred. -->
+Spatial variation in trends suggested that most stations in South Bay had increasing chlorophyll from 1990 to 2010 following a decrease in recent years, although many trends were not significant and varied by location (Figure \@ref(fig:trndmap)a).  From 1990 to 2000, only station 18 and 22 in the northern part of South Bay had significant increasing trends.  The magnitude of the chlorophyll increase in the southernmost stations (34, 36) was higher during this same period, although the trends were not significant.  From 2000 to 2010, significant increases were observed at the three northern-most stations (18, 21, and 22) and two southern stations (32, 34).  From 2010 to 2016, all four southern stations had significant decreases in annual chlorophyll.  The spatial trends were further evaluated with mixed-meta regression analysis to provide additional context to the annual changes by evaluating trends from January to July and August to December (Figure \@ref(fig:trndmap)b).  For the January to July period, significant changes were only observed at the southern stations, with increases at station 34 and 36 from 1990-2000, an increase at station 34 from 2000-2010, and a decrease at station 32 form 2010 to 2016.  No significant changes were observed for the August to December period.
 
-<!-- Spatial variation in trends suggested that most stations in South Bay had increasing chlorophyll from 1990 to 2010 following a decrease in recent years, although many trends were not significant and varied by location (Figure \@ref(fig:trndmap)a).  From 1990 to 2000, only station 18 and 22 in the northern part of South Bay had significant increasing trends.  The magnitude of the chlorophyll increase in the southernmost stations (34, 36) was higher during this same period, although the trends were not significant.  From 2000 to 2010, significant increases were observed at the three northern-most stations (18, 21, and 22) and two southern stations (32, 34).  From 2010 to 2016, all four southern stations had significant decreases in annual chlorophyll.  The spatial trends were further evaluated with mixed-meta regression analysis to provide additional context to the annual changes by evaluating trends from January to July and August to December (Figure \@ref(fig:trndmap)b).  For the January to July period, significant changes were only observed at the southern stations, with increases at station 34 and 36 from 1990-2000, an increase at station 34 from 2000-2010, and a decrease at station 32 form 2010 to 2016.  No significant changes were observed for the August to December period. -->
+A final analysis of the seasonal trends evaluated more discrete monthly periods in three month blocks to provide finer resolution to explain trends from the GAM results (Table \@ref(tab:seastrndtab)).  Many stations and time periods did not show any seasonal chlorophyll trends or only had one significant trend (e.g., stations 21 and 24, JFM period from 2000-2010).  However, several trends were observed in the southern stations, with two significant trends at station 32, six at station 34, and three at station 36.  Trends at station 32 indicated a positive increase in the JFM (January, February, March) period from 2000-2010, followed by a significant decrease for the same seasonal period from 2010-2016.  Station 34 had significant increases in the JFM period from 1990-2010 and all other periods the OND (October, November, December) period for 2000 to 2010.  Significant decreases were observed at station 34 in the JFM and AMJ (April, March, July) period from 2010 to 2016.  Station 36 had significant chlorophyll increases in all seasons, except OND for the 1990 to 2000 period.  Accordingly, table \@ref(tab:seastrndtab) demonstrates the value of obtaining greater insight into seasonal changes by evaluating different blocks as compared to the larger seasonal blocks shown in Figure \@ref(fig:trndmap)b.
 
-<!-- A final analysis of the seasonal trends evaluated more discrete monthly periods in three month blocks to provide finer resolution to explain trends from the GAM results (Table \@ref(tab:seastrndtab)).  Many stations and time periods did not show any seasonal chlorophyll trends or only had one significant trend (e.g., stations 21 and 24, JFM period from 2000-2010).  However, several trends were observed in the southern stations, with two significant trends at station 32, six at station 34, and three at station 36.  Trends at station 32 indicated a positive increase in the JFM (January, February, March) period from 2000-2010, followed by a significant decrease for the same seasonal period from 2010-2016.  Station 34 had significant increases in the JFM period from 1990-2010 and all other periods the OND (October, November, December) period for 2000 to 2010.  Significant decreases were observed at station 34 in the JFM and AMJ (April, March, July) period from 2010 to 2016.  Station 36 had significant chlorophyll increases in all seasons, except OND for the 1990 to 2000 period.  Accordingly, table \@ref(tab:seastrndtab) demonstrates the value of obtaining greater insight into seasonal changes by evaluating different blocks as compared to the larger seasonal blocks shown in Figure \@ref(fig:trndmap)b. -->
+## Trend comparisons
 
-<!-- ## Trend comparisons -->
+Trends results from the mixed-meta regression method for each season and different time periods were compared to alternative trend analyses to demonstrate different conclusions that can be derived depending on method.  Figure \@ref(fig:trndcmp) shows estimates of chlorophyll change per year for the same seasonal periods and annual groupings as in figure \@ref(fig:trndmap)b.  In addition to mixed-meta analysis, two alternative trend methods were used where the first shows slope estimates from a linear regression on annual averages of observed chlorophyll for the specified seasonal period and the second shows slope estimates from a linear regression model on annual averages derived from the GAM seasonal estimates.  The latter uses the same averages from the mixed-meta analysis, but is a simpler approach that does not account for the uncertainty in the average estimates.
 
-<!-- Trends results from the mixed-meta regression method for each season and different time periods were compared to alternative trend analyses to demonstrate different conclusions that can be derived depending on method.  Figure \@ref(fig:trndcmp) shows estimates of chlorophyll change per year for the same seasonal periods and annual groupings as in figure \@ref(fig:trndmap)b.  In addition to mixed-meta analysis, two alternative trend methods were used where the first shows slope estimates from a linear regression on annual averages of observed chlorophyll for the specified seasonal period and the second shows slope estimates from a linear regression model on annual averages derived from the GAM seasonal estimates.  The latter uses the same averages from the mixed-meta analysis, but is a simpler approach that does not account for the uncertainty in the average estimates. -->
-
-<!-- The different trend analysis methods provided conflicting information on the magnitude and direction of the seasonal chlorophyll changes in each decade (Figure \@ref(fig:trndcmp)).  The slope estimates from the linear model applied to the observed data were understandably more variable than the slope estimate from the average and mixed-meta methods, with much larger slopes observed especially at the more southern stations.  Slope estimates from the linear model applied to the averages from the GAMs as compared ot the mixed-meta results were identical at almost all stations, excluding station 32 in the January-July period from 1990-2000 when the former showed a negative slope and the latter showed a positive slope.  The mixed-meta analyses had less significant trends compared to the average results for the same GAM estimates, which reflects the ability of the former to account for uncertainty in the average estimates when considering trends.  Importantly, completely opposite and/or varying significance of trends were observed between the methods, suggesting choice of analysis method can influence the certainty of conclusions. -->
+The different trend analysis methods provided conflicting information on the magnitude and direction of the seasonal chlorophyll changes in each decade (Figure \@ref(fig:trndcmp)).  The slope estimates from the linear model applied to the observed data were understandably more variable than the slope estimate from the average and mixed-meta methods, with much larger slopes observed especially at the more southern stations.  Slope estimates from the linear model applied to the averages from the GAMs as compared ot the mixed-meta results were identical at almost all stations, excluding station 32 in the January-July period from 1990-2000 when the former showed a negative slope and the latter showed a positive slope.  The mixed-meta analyses had less significant trends compared to the average results for the same GAM estimates, which reflects the ability of the former to account for uncertainty in the average estimates when considering trends.  Importantly, completely opposite and/or varying significance of trends were observed between the methods, suggesting choice of analysis method can influence the certainty of conclusions.
 
 # Discussion
 
@@ -535,58 +526,102 @@ knitr::include_graphics('figs/prddat.png')
 toplo <- modslog_chl34 %>%
   pull(model)
 
+chg1 <- anlz_perchg(mods = toplo, baseyr = 1991, testy = 2000)
+chg2 <- anlz_perchg(mods = toplo, baseyr = 2001, testy = 2010)
+chg3 <- anlz_perchg(mods = toplo, baseyr = 2011, testy = 2019)
+chg <- bind_rows(chg1, chg2, chg3) %>% 
+  mutate_if(is.numeric, round, 1) %>% 
+  mutate(
+    pval = p_ast(pval)
+  )
+
+seas <- tibble(
+  doystr = c(41, 41, 41, 213, 213, 213), 
+  doyend = c(213, 213, 213, 338, 338, 338), 
+  yrstr = c(1991, 2000, 2010, 1991, 2000, 2010), 
+  yrend = c(2000, 2010, 2019, 2000, 2010, 2019)
+  ) %>% 
+  mutate(
+    est = purrr::pmap(list(doystr, doyend, yrstr, yrend), function(doystr, doyend, yrstr, yrend){
+      
+      out <- anlz_avgseason(mods = toplo, doystr = doystr, doyend = doyend) %>% 
+        anlz_mixmeta(yrstr = yrstr, yrend = yrend) %>% 
+        .[[1]] %>% 
+        summary %>% 
+        coef(.) %>% 
+        .[2, ] 
+      out <- data.frame(est = out[['Estimate']], pval = out[['Pr(>|z|)']])
+     
+      return(out)
+      
+    })
+  ) %>% 
+  unnest(est) %>% 
+  mutate(
+    lets = c('(d)', '(e)', '(f)', '(g)', '(h)', '(i)'), 
+    doystr = ifelse(doystr == 41, 'Jan', 'Jul'), 
+    doyend = ifelse(doyend == 213, 'Jun', 'Dec'), 
+    est = paste('slope', round(est, 2)),
+    pval = p_ast(pval)
+  ) %>% 
+  unite('seas', doystr, doyend, sep = '-') %>% 
+  unite('yrs', yrstr, yrend, sep = '-') %>% 
+  unite('lets', lets, yrs, sep = ' ') %>% 
+  unite('lets', lets, seas, est, pval, sep = ', ') %>% 
+  deframe
+
 ylim <- c(-1, 19)
 ylab <- expression(paste("Chlorophyll-a (", mu, "g ", L^-1, ")"))
 
 p1 <- show_perchg(mods = toplo, baseyr = 1991, testyr = 2000, ylab = ylab) +
   labs(
-    subtitle = '(a) 1990, 2000, Base: 3.6, Test: 5.7,\nChange: 57.7%, ns', 
+    subtitle = paste0('(a) 1991: ', chg[[1, 2]],' ug/L, 2000: ', chg[[1, 3]], 'ug/L\nChange: ', chg[[1,4]], '%, ', chg[[1,5]]), 
     title = NULL
   )
 p2 <- show_perchg(mods = toplo, baseyr = 2000, testyr = 2010, ylab = NULL) +
   labs(
-    subtitle = '(b) 2000, 2010, Base: 5.7, Test: 10.1,\nChange: 77.5%, p < 0.001', 
+    subtitle = paste0('(a) 1991: ', chg[[2, 2]],' ug/L, 2000: ', chg[[2, 3]], 'ug/L\nChange: ', chg[[2, 4]], '%, ', chg[[2, 5]]), 
     title = NULL
   )
 p3 <- show_perchg(mods = toplo, baseyr = 2010, testyr = 2019, ylab = NULL) +
   labs(
-    subtitle = '(c) 2010, 2019, Base: 10.1, Test: 6.1,\nChange: -39.8%, p < 0.01', 
+    subtitle = paste0('(a) 1991: ', chg[[3, 2]],' ug/L, 2000: ', chg[[3, 3]], 'ug/L\nChange: ', chg[[3, 4]], '%, ', chg[[3, 5]]), 
     title = NULL
   )
 p4 <- show_avgseason(mods = toplo, doystr = 41, doyend = 213, yrstr = 1991, yrend = 2000, ylab = ylab) +
   scale_y_continuous(limits = ylim) + 
   labs(
-    subtitle = '(d) 1990-2000, Jan-Jul, slope 0.6, p < 0.01', 
+    subtitle = seas[[1]],
     title = NULL
   )
 p5 <- show_avgseason(mods = toplo, doystr = 41, doyend = 213, yrstr = 2000, yrend = 2010, ylab = NULL) +
   scale_y_continuous(limits = ylim) + 
   labs(
-    subtitle = '(e) 2000-2010, Jan-Jul, slope 0.5, ns', 
+    subtitle = seas[[2]], 
     title = NULL
   )
 p6 <- show_avgseason(mods = toplo, doystr = 41, doyend = 213, yrstr = 2010, yrend = 2019, ylab = NULL) +
   scale_y_continuous(limits = ylim) + 
   labs(
-    subtitle = '(f) 2010-2019, Jan-Jul, slope -0.4, ns', 
+    subtitle = seas[[3]], 
     title = NULL
   )
 p7 <- show_avgseason(mods = toplo, doystr = 213, doyend = 338, yrstr = 1991, yrend = 2000, ylab = ylab) +
   scale_y_continuous(limits = ylim) + 
   labs(
-    subtitle = '(g) 1990-2000, Aug-Dec, slope 0.26, ns', 
+    subtitle = seas[[4]], 
     title = NULL
   )
 p8 <- show_avgseason(mods = toplo, doystr = 213, doyend = 338, yrstr = 2000, yrend = 2010, ylab = NULL) +
   scale_y_continuous(limits = ylim) + 
   labs(
-    subtitle = '(h) 2000-2010, Aug-Dec, slope 0.56, p < 0.05', 
+    subtitle = seas[[5]], 
     title = NULL
   )
 p9 <- show_avgseason(mods = toplo, doystr = 213, doyend = 338, yrstr = 2010, yrend = 2019, ylab = NULL) +
   scale_y_continuous(limits = ylim) + 
   labs(
-    subtitle = '(i) 2010-2019, Aug-Dec, slope -0.52, ns', 
+    subtitle = seas[[6]],
     title = NULL
   )
 
@@ -601,7 +636,7 @@ png('figs/trnddat.png', height = 9, width = 11, family = 'serif', units = 'in', 
 print(p)
 dev.off()
 ```
-```{r trnddat, fig.cap = "Examples of trend tests using results of GAM predictions for station 34 (`Const seas*`).  Plots (a), (b), and (c) show estimates of percent change as the difference of means between base and test years for chlorophyll.  Plots (d) through (i) show seasonal averages and trend estimates over time.  Plot (d), (e), and (f) show trend estimates for January through July and (g), (h), and (i) show trend estimates for August through December.  The trend lines in (d) through (i) estimate the rate of change of chlorophyll per year, reported as the slope in the plot title. ns: not significant"}
+```{r trnddat, fig.cap = "Examples of trend tests using results of GAM predictions for station 34.  Plots (a), (b), and (c) show estimates of percent change as the difference of means between year pairs for chlorophyll.  Plots (d) through (i) show seasonal averages and trend estimates over time.  Plot (d), (e), and (f) show trend estimates for January through June and (g), (h), and (i) show trend estimates for July through December.  The trend lines in (d) through (i) estimate the rate of change of chlorophyll per year, reported as the slope in the plot title. ns: not significant, * p < 0.05, ** p < 0.005"}
 knitr::include_graphics('figs/trnddat.png')
 ```
 
