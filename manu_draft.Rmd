@@ -570,7 +570,7 @@ seas <- tibble(
   unite('lets', lets, seas, est, pval, sep = ', ') %>% 
   deframe
 
-ylim <- c(-1, 19)
+ylim <- c(0, 16)
 ylab <- expression(paste("Chlorophyll-a (", mu, "g ", L^-1, ")"))
 
 p1 <- show_perchg(mods = toplo, baseyr = 1991, testyr = 2000, ylab = ylab) +
@@ -589,37 +589,37 @@ p3 <- show_perchg(mods = toplo, baseyr = 2010, testyr = 2019, ylab = NULL) +
     title = NULL
   )
 p4 <- show_avgseason(mods = toplo, doystr = 41, doyend = 213, yrstr = 1991, yrend = 2000, ylab = ylab) +
-  scale_y_continuous(limits = ylim) + 
+  coord_cartesian(ylim = ylim) + 
   labs(
     subtitle = seas[[1]],
     title = NULL
   )
 p5 <- show_avgseason(mods = toplo, doystr = 41, doyend = 213, yrstr = 2000, yrend = 2010, ylab = NULL) +
-  scale_y_continuous(limits = ylim) + 
+  coord_cartesian(ylim = ylim) + 
   labs(
     subtitle = seas[[2]], 
     title = NULL
   )
 p6 <- show_avgseason(mods = toplo, doystr = 41, doyend = 213, yrstr = 2010, yrend = 2019, ylab = NULL) +
-  scale_y_continuous(limits = ylim) + 
+  coord_cartesian(ylim = ylim) +  
   labs(
     subtitle = seas[[3]], 
     title = NULL
   )
 p7 <- show_avgseason(mods = toplo, doystr = 213, doyend = 338, yrstr = 1991, yrend = 2000, ylab = ylab) +
-  scale_y_continuous(limits = ylim) + 
+  coord_cartesian(ylim = ylim) + 
   labs(
     subtitle = seas[[4]], 
     title = NULL
   )
 p8 <- show_avgseason(mods = toplo, doystr = 213, doyend = 338, yrstr = 2000, yrend = 2010, ylab = NULL) +
-  scale_y_continuous(limits = ylim) + 
+  coord_cartesian(ylim = ylim) + 
   labs(
     subtitle = seas[[5]], 
     title = NULL
   )
 p9 <- show_avgseason(mods = toplo, doystr = 213, doyend = 338, yrstr = 2010, yrend = 2019, ylab = NULL) +
-  scale_y_continuous(limits = ylim) + 
+  coord_cartesian(ylim = ylim) + 
   labs(
     subtitle = seas[[6]],
     title = NULL
