@@ -470,11 +470,10 @@ SYD <- gam(value ~ cont_year + s(cont_year, k = 360) + s(doy, bs = 'cc', k = 230
            na.action = na.exclude,
            select = F)
 SYD$trans <- 'log10'
-SYDI <- gam(value ~ cont_year + s(cont_year, k = 300) + s(doy, bs = 'cc', k = 100) + ti(cont_year, doy, bs = c('tp', 'cc'), k = 15),
+SYDI <- gam(value ~ cont_year + s(cont_year, k = 300) + s(doy, bs = 'cc', k = 105) + ti(cont_year, doy, bs = c('tp', 'cc'), k = 15),
             knots = list(doy = c(1, 366)),
             data = moddat,
             na.action = na.exclude,
-            method = 'REML',
             select = F)
 SYDI$trans <- 'log10'
 
@@ -486,6 +485,6 @@ modstr <- list(
 )
 
 
-# anlz_fit(mods = modstr)
+anlz_fit(mods = modstr)
 
 save(modstr, file = 'data/modstr.RData', compress = 'xz')
