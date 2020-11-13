@@ -382,16 +382,42 @@ thm <-theme_minimal() +
   )
 lncol <- 'tomato1'
 alph <- 0.5
+ylm <- c(0.8, 100)
 
-p1 <- show_prddoy(mods = mods, ylab = 'Chlorophyll-a (ug/L)', nfac = 3, size = 0.8, alpha = 0.8) + 
+p1a <- show_prddoy(mods[[1]], ylab = 'SY: Chl-a (ug/L)', size = 0.8, alpha = 0.8) + 
   guides(colour = ggplot2::guide_colourbar(barheight = 15, barwidth = 1)) +
   scale_colour_gradient(low = "white", high = "black") + 
-  thm + 
+  coord_cartesian(ylim = ylm) +
+  theme_minimal() + 
+  theme(
+    legend.position = 'none', 
+    axis.title.x = element_blank()
+  ) +
   labs(
     title = '(a) Model predictions by day of year'
   )
+p1b <- show_prddoy(modstr[[2]], ylab = 'SYD: Chl-a (ug/L)', size = 0.8, alpha = 0.8) + 
+  guides(colour = ggplot2::guide_colourbar(barheight = 15, barwidth = 1)) +
+  scale_colour_gradient(low = "white", high = "black") + 
+  coord_cartesian(ylim = ylm) +
+  theme_minimal() + 
+  theme(
+    legend.position = 'none'
+  )
+p1c <- show_prddoy(mods[[3]], ylab = 'SYDI: Chl-a (ug/L)', size = 0.8, alpha = 0.8) + 
+  guides(colour = ggplot2::guide_colourbar(barheight = 15, barwidth = 1)) +
+  scale_colour_gradient(low = "white", high = "black") + 
+  coord_cartesian(ylim = ylm) +
+  theme_minimal() + 
+  theme(
+    legend.position = 'right', 
+    axis.title.x = element_blank()
+  )
 
-prds <- anlz_prd(mods = mods, trans = 'log10')
+p1 <- p1a + p1b + p1c + plot_layout(ncol = 3, widths = c(1, 1, 1))
+prds <- lapply(modstr, anlz_prd) %>% 
+  enframe('model', 'dat') %>%
+  unnest('dat')
 
 toplo2 <- prds %>% 
   select(model, date, value) %>% 
@@ -462,9 +488,10 @@ modprds <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
       nm <- gsub('\\.RData', '', nm)
 
       mod <- get(nm) %>% 
-        pull(model)
+        pull(model) %>% 
+        deframe()
       
-      prd <- anlz_prd(mods = mod) %>% 
+      prd <- anlz_prd(mod) %>% 
         anlz_backtrans()
       
       return(prd)
@@ -529,12 +556,13 @@ knitr::include_graphics('figs/prddat.png')
 ```
 
 ```{r, results = 'hide', message = F}
-toplo <- modslog_chl34 %>%
-  pull(model)
+mod <- modslog_chl34 %>%
+  pull(model) %>% 
+  deframe()
 
-chg1 <- anlz_perchg(mods = toplo, baseyr = 1991, testy = 2000)
-chg2 <- anlz_perchg(mods = toplo, baseyr = 2000, testy = 2010)
-chg3 <- anlz_perchg(mods = toplo, baseyr = 2010, testy = 2019)
+chg1 <- anlz_perchg(mod, baseyr = 1991, testy = 2000)
+chg2 <- anlz_perchg(mod, baseyr = 2000, testy = 2010)
+chg3 <- anlz_perchg(mod, baseyr = 2010, testy = 2019)
 chg <- bind_rows(chg1, chg2, chg3) %>% 
   mutate_if(is.numeric, round, 1) %>% 
   mutate(
@@ -550,9 +578,8 @@ seas <- tibble(
   mutate(
     est = purrr::pmap(list(doystr, doyend, yrstr, yrend), function(doystr, doyend, yrstr, yrend){
       
-      out <- anlz_avgseason(mods = toplo, doystr = doystr, doyend = doyend) %>% 
+      out <- anlz_avgseason(mod, doystr = doystr, doyend = doyend) %>% 
         anlz_mixmeta(yrstr = yrstr, yrend = yrend) %>% 
-        .[[1]] %>% 
         summary %>% 
         coef(.) %>% 
         .[2, ] 
@@ -579,52 +606,52 @@ seas <- tibble(
 ylim <- c(0, 16)
 ylab <- expression(paste("Chlorophyll-a (", mu, "g ", L^-1, ")"))
 
-p1 <- show_perchg(mods = toplo, baseyr = 1991, testyr = 2000, ylab = ylab) +
+p1 <- show_perchg(mod, baseyr = 1991, testyr = 2000, ylab = ylab) +
   labs(
-    subtitle = paste0('(a) 1991: ', chg[[1, 2]],' ug/L, 2000: ', chg[[1, 3]], 'ug/L\nChange: ', chg[[1,4]], '%, ', chg[[1,5]]), 
+    subtitle = paste0('(a) 1991: ', chg[[1, 1]],' ug/L, 2000: ', chg[[1, 2]], 'ug/L\nChange: ', chg[[1,3]], '%, ', chg[[1,4]]), 
     title = NULL
   )
-p2 <- show_perchg(mods = toplo, baseyr = 2000, testyr = 2010, ylab = NULL) +
+p2 <- show_perchg(mod, baseyr = 2000, testyr = 2010, ylab = NULL) +
   labs(
-    subtitle = paste0('(a) 2000: ', chg[[2, 2]],' ug/L, 2010: ', chg[[2, 3]], 'ug/L\nChange: ', chg[[2, 4]], '%, ', chg[[2, 5]]), 
+    subtitle = paste0('(a) 2000: ', chg[[2, 1]],' ug/L, 2010: ', chg[[2, 2]], 'ug/L\nChange: ', chg[[2, 3]], '%, ', chg[[2, 4]]), 
     title = NULL
   )
-p3 <- show_perchg(mods = toplo, baseyr = 2010, testyr = 2019, ylab = NULL) +
+p3 <- show_perchg(mod, baseyr = 2010, testyr = 2019, ylab = NULL) +
   labs(
-    subtitle = paste0('(a) 2010: ', chg[[3, 2]],' ug/L, 2019: ', chg[[3, 3]], 'ug/L\nChange: ', chg[[3, 4]], '%, ', chg[[3, 5]]), 
+    subtitle = paste0('(a) 2010: ', chg[[3, 1]],' ug/L, 2019: ', chg[[3,2]], 'ug/L\nChange: ', chg[[3, 3]], '%, ', chg[[3, 4]]), 
     title = NULL
   )
-p4 <- show_avgseason(mods = toplo, doystr = 41, doyend = 213, yrstr = 1991, yrend = 2000, ylab = ylab) +
+p4 <- show_avgseason(mod, doystr = 41, doyend = 213, yrstr = 1991, yrend = 2000, ylab = ylab) +
   coord_cartesian(ylim = ylim) + 
   labs(
     subtitle = seas[[1]],
     title = NULL
   )
-p5 <- show_avgseason(mods = toplo, doystr = 41, doyend = 213, yrstr = 2000, yrend = 2010, ylab = NULL) +
+p5 <- show_avgseason(mod, doystr = 41, doyend = 213, yrstr = 2000, yrend = 2010, ylab = NULL) +
   coord_cartesian(ylim = ylim) + 
   labs(
     subtitle = seas[[2]], 
     title = NULL
   )
-p6 <- show_avgseason(mods = toplo, doystr = 41, doyend = 213, yrstr = 2010, yrend = 2019, ylab = NULL) +
+p6 <- show_avgseason(mod, doystr = 41, doyend = 213, yrstr = 2010, yrend = 2019, ylab = NULL) +
   coord_cartesian(ylim = ylim) +  
   labs(
     subtitle = seas[[3]], 
     title = NULL
   )
-p7 <- show_avgseason(mods = toplo, doystr = 213, doyend = 338, yrstr = 1991, yrend = 2000, ylab = ylab) +
+p7 <- show_avgseason(mod, doystr = 213, doyend = 338, yrstr = 1991, yrend = 2000, ylab = ylab) +
   coord_cartesian(ylim = ylim) + 
   labs(
     subtitle = seas[[4]], 
     title = NULL
   )
-p8 <- show_avgseason(mods = toplo, doystr = 213, doyend = 338, yrstr = 2000, yrend = 2010, ylab = NULL) +
+p8 <- show_avgseason(mod, doystr = 213, doyend = 338, yrstr = 2000, yrend = 2010, ylab = NULL) +
   coord_cartesian(ylim = ylim) + 
   labs(
     subtitle = seas[[5]], 
     title = NULL
   )
-p9 <- show_avgseason(mods = toplo, doystr = 213, doyend = 338, yrstr = 2010, yrend = 2019, ylab = NULL) +
+p9 <- show_avgseason(mod, doystr = 213, doyend = 338, yrstr = 2010, yrend = 2019, ylab = NULL) +
   coord_cartesian(ylim = ylim) + 
   labs(
     subtitle = seas[[6]],
@@ -725,7 +752,6 @@ knitr::include_graphics('figs/trndmap.png')
 toplo <- seastrnd3 %>% 
   na.omit() %>% 
   mutate(
-    sta = gsub('^data/modslog_chl|\\.RData', '', fl), 
     subttl = ifelse(doystr < 150, '(a) Jan-Jun', '(b) Jul-Dec'),
     pval = dplyr::case_when(
       pval < 0.05 ~ 'p < 0.05', 
@@ -741,7 +767,7 @@ p <- ggplot(data = toplo, aes(x = yr, y = yrcoef, fill = pval)) +
   scale_y_continuous(limits = c(-2, 2)) +
   scale_fill_manual(values = c(NA, 'tomato1'), drop = FALSE) +
   geom_hline(yintercept = 0) + 
-  facet_grid(sta ~ subttl) + 
+  facet_grid(station ~ subttl) + 
   theme_minimal(base_family = 'serif') + 
   theme(
     axis.title.x = element_blank(), 
