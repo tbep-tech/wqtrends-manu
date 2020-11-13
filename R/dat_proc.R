@@ -17,16 +17,9 @@ modssta <- rawdat %>%
   nest() %>% 
   mutate(
     model = purrr::pmap(list(station, data), function(station, data){
-      
+
       cat(station, '\n')
-      moddat <- anlz_trans(data, trans = 'log10')
-      out <- gam(value ~ s(cont_year, k = 360),
-        knots = list(doy = c(1, 366)),
-        data = moddat,
-        na.action = na.exclude,
-        select = F)
-      
-      out$trans <- 'log10'
+      out <- anlz_gam(data, trans = 'log10')
       
       return(out)
       
@@ -68,12 +61,12 @@ modprf <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
 
       nm <- basename(x)
       nm <- gsub('\\.RData', '', nm)
-      
-      dat <- get(nm) %>% 
-        select(model) %>% 
+
+      mod <- get(nm) %>% 
+        pull(model) %>% 
         deframe()
       
-      out <- anlz_fit(mods = dat)
+      out <- anlz_fit(mod)
       
       return(out)
       
@@ -82,9 +75,12 @@ modprf <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
   ungroup %>% 
   select(-data) %>% 
   unnest('prf') %>% 
-  select(-AIC, -k, -F, -p.value, -value) %>% 
+  select(-AIC) %>% 
+  mutate(
+    value = gsub('^data/modslog\\_chl|\\.RData$', '', value)
+  ) %>% 
   rename(
-    station = model
+    station = value
   ) 
 
 save(modprf, file = 'data/modprf.RData', compress = 'xz')
@@ -114,7 +110,8 @@ seastrnd <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
       nm <- gsub('\\.RData', '', nm)
 
       out <- get(nm) %>%
-        pull(model)
+        pull(model) %>% 
+        deframe
       
       return(out)
       
@@ -124,7 +121,7 @@ seastrnd <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
   group_by(doystr, doyend, fl, mod) %>%
   nest() %>%
   mutate(
-    avgseas = purrr::pmap(list(mods = mod, doystr = doystr, doyend = doyend), anlz_avgseason)
+    avgseas = purrr::pmap(list(mod = mod, doystr = doystr, doyend = doyend), anlz_avgseason)
   ) %>% 
   unnest('data') %>% 
   mutate(
@@ -137,9 +134,9 @@ seastrnd <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
     metatrnd = purrr::pmap(list(avgseason = avgseas, yrstr = yrstr, yrend = yrend), anlz_mixmeta)
   ) %>% 
   mutate(
-    yrcoef = purrr::map(metatrnd, function(x) x[[1]]$coefficients['yr']), 
+    yrcoef = purrr::map(metatrnd, function(x) x$coefficients['yr']), 
     pval = purrr::map(metatrnd, function(x){
-      coefficients(summary(x[[1]])) %>% data.frame %>% .[2, 4]
+      coefficients(summary(x)) %>% data.frame %>% .[2, 4]
     }
     )
   ) %>% 
@@ -184,7 +181,8 @@ seastrnd2 <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
       nm <- gsub('\\.RData', '', nm)
       
       out <- get(nm) %>% 
-        pull(model)
+        pull(model) %>% 
+        deframe()
       
       return(out)
       
@@ -194,7 +192,7 @@ seastrnd2 <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
   group_by(doystr, doyend, mod, fl) %>% 
   nest() %>% 
   mutate(
-    avgseas = purrr::pmap(list(mods = mod, doystr = doystr, doyend = doyend), anlz_avgseason)
+    avgseas = purrr::pmap(list(mod = mod, doystr = doystr, doyend = doyend), anlz_avgseason)
   ) %>% 
   unnest('data') %>% 
   mutate(
@@ -207,9 +205,9 @@ seastrnd2 <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
     metatrnd = purrr::pmap(list(avgseason = avgseas, yrstr = yrstr, yrend = yrend), anlz_mixmeta)
   ) %>% 
   mutate(
-    yrcoef = purrr::map(metatrnd, function(x) x[[1]]$coefficients['yr']), 
+    yrcoef = purrr::map(metatrnd, function(x) x$coefficients['yr']), 
     pval = purrr::map(metatrnd, function(x){
-      coefficients(summary(x[[1]])) %>% data.frame %>% .[2, 4]
+      coefficients(summary(x)) %>% data.frame %>% .[2, 4]
     }
     )
   ) %>% 
@@ -250,7 +248,8 @@ seastrnd3 <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
       nm <- gsub('\\.RData', '', nm)
       
       out <- get(nm) %>% 
-        pull(model)
+        pull(model) %>% 
+        deframe()
       
       return(out)
       
@@ -260,10 +259,10 @@ seastrnd3 <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
   group_by(doystr, doyend, mod, fl) %>% 
   nest() %>% 
   mutate(
-    res = purrr::pmap(list(fl, mods = mod, doystr, doyend), function(fl, mods, doystr, doyend){
+    res = purrr::pmap(list(fl, mod = mod, doystr, doyend), function(fl, mod, doystr, doyend){
       
       # get slope trends
-      out <- anlz_trndseason(mods = mod[[1]], doystr = doystr, doyend = doyend, justify = 'center', win = 5)
+      out <- anlz_trndseason(mod = mod, doystr = doystr, doyend = doyend, justify = 'center', win = 5)
       
       return(out)
       
@@ -271,7 +270,13 @@ seastrnd3 <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
   ) %>% 
   unnest(res) %>%
   ungroup() %>% 
-  select(-mod, -data)
+  select(-mod, -data) %>% 
+  mutate(
+    fl = gsub('^data/modslog_chl|\\.RData', '', fl) 
+  ) %>%
+  rename(
+    station = fl
+  )
 
 save(seastrnd3, file = 'data/seastrnd3.RData', compress = 'xz')
 
@@ -296,7 +301,8 @@ chgtrnd <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
       nm <- gsub('\\.RData', '', nm)
 
       out <- get(nm) %>%  
-        pull(model)
+        pull(model) %>% 
+        deframe()
       
       return(out)
       
@@ -304,7 +310,7 @@ chgtrnd <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
   ) %>% 
   unnest(c('data')) %>% 
   mutate(
-    perchg = purrr::pmap(list(mods = mod, baseyr = yrstr, testyr = yrend), anlz_perchg)
+    perchg = purrr::pmap(list(mod = mod, baseyr = yrstr, testyr = yrend), anlz_perchg)
   ) %>% 
   select(-mod) %>% 
   unnest('perchg') %>% 
@@ -352,7 +358,8 @@ cmptrnd <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
       nm <- gsub('\\.RData', '', nm)
       
       out <- get(nm) %>% 
-        pull(model)
+        pull(model) %>% 
+        deframe()
       
       return(out)
       
@@ -362,7 +369,7 @@ cmptrnd <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
   group_by(doystr, doyend, mod, fl) %>% 
   nest() %>% 
   mutate(
-    avgseas = purrr::pmap(list(mods = mod, doystr = doystr, doyend = doyend), anlz_avgseason)
+    avgseas = purrr::pmap(list(mod = mod, doystr = doystr, doyend = doyend), anlz_avgseason)
   ) %>% 
   unnest('data') %>% 
   mutate(
@@ -374,14 +381,16 @@ cmptrnd <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
     }),
     metatrnd = purrr::pmap(list(avgseason = avgseas, yrstr = yrstr, yrend = yrend), anlz_mixmeta),
     lmtrnd = purrr::pmap(list(avgseas, yrstr, yrend), function(avgseas, yrstr, yrend){
+
       out <- avgseas %>% 
         filter(yr >= yrstr & yr <= yrend) %>% 
-        lm(predicted ~ yr, .)
+        lm(avg ~ yr, .)
+      
       return(out)
     }), 
     obstrnd = purrr::pmap(list(doystr, doyend, mod, yrstr, yrend), function(doystr, doyend, mod, yrstr, yrend){
 
-      moddat <- mod[[1]]$model %>% 
+      moddat <- mod$model %>% 
         mutate(
           yr = floor(cont_year), 
           doy = yday(date_decimal(cont_year)),
@@ -402,9 +411,6 @@ cmptrnd <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
   gather('mod', 'est', metatrnd, lmtrnd, obstrnd) %>% 
   mutate(
     yrcoef = purrr::pmap(list(mod, est), function(mod, est){
-      
-      if(mod == 'metatrnd')
-        est <- est[[1]]
       
       est$coefficients[[2]]
       
