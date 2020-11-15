@@ -430,17 +430,23 @@ toplo3 <- prds %>%
 p2a <- ggplot(toplo2, aes(x = SY, y = SYD)) + 
   geom_point(alpha = alph) + 
   geom_abline(slope = 1, intercept = 0, color = lncol) + 
+  scale_y_log10() + 
+  scale_x_log10() + 
   thm + 
   labs(
-    title = '(b) Estimated chlorophyll (log-space) between models'
+    title = '(b) Estimated chlorophyll between models'
   )
 p2b <- ggplot(toplo2, aes(x = SYD, y = SYDI)) + 
   geom_point(alpha = alph) + 
   geom_abline(slope = 1, intercept = 0, color = lncol) + 
+  scale_y_log10() + 
+  scale_x_log10() + 
   thm
 p2c <- ggplot(toplo2, aes(x = SY, y = SYDI)) + 
   geom_point(alpha = alph) + 
   geom_abline(slope = 1, intercept = 0, color = lncol) + 
+  scale_y_log10() + 
+  scale_x_log10() + 
   thm
 
 p2 <- p2a + p2b + p2c + plot_layout(ncol = 3)
@@ -449,6 +455,8 @@ p2 <- p2a + p2b + p2c + plot_layout(ncol = 3)
 p3a <- ggplot(toplo3, aes(x = SY, y = SYD)) + 
   geom_point(alpha = alph) + 
   geom_abline(slope = 1, intercept = 0, color = lncol) + 
+  scale_y_log10() + 
+  scale_x_log10() + 
   thm +
   labs(
     title = '(c) Estimated s(cont_year) between models'
@@ -456,10 +464,14 @@ p3a <- ggplot(toplo3, aes(x = SY, y = SYD)) +
 p3b <- ggplot(toplo3, aes(x = SYD, y = SYDI)) + 
   geom_point(alpha = alph) + 
   geom_abline(slope = 1, intercept = 0, color = lncol) + 
+  scale_y_log10() + 
+  scale_x_log10() + 
   thm
 p3c <- ggplot(toplo3, aes(x = SY, y = SYDI)) + 
   geom_point(alpha = alph) + 
   geom_abline(slope = 1, intercept = 0, color = lncol) + 
+  scale_y_log10() + 
+  scale_x_log10() + 
   thm
 
 p3 <- p3a + p3b + p3c + plot_layout(ncol = 3)
@@ -491,8 +503,7 @@ modprds <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
         pull(model) %>% 
         deframe()
       
-      prd <- anlz_prd(mod) %>% 
-        anlz_backtrans()
+      prd <- anlz_prd(mod)
       
       return(prd)
       
@@ -603,7 +614,7 @@ seas <- tibble(
   unite('lets', lets, seas, est, pval, sep = ', ') %>% 
   deframe
 
-ylim <- c(0, 16)
+ylim <- c(0, 21)
 ylab <- expression(paste("Chlorophyll-a (", mu, "g ", L^-1, ")"))
 
 p1 <- show_perchg(mod, baseyr = 1991, testyr = 2000, ylab = ylab) +
@@ -683,12 +694,12 @@ attributes(bsmap1_transparent) <- mapatt
 
 leglab2 <- expression(paste("Chl-a change (", italic(mu), "g ", L^-1, yr^-1, ")"))
 
-pthm <- theme_bw(base_family = 'serif', base_size = 14) +
+pthm <- theme_bw(base_family = 'serif', base_size = 12) +
   theme(
     legend.position = 'top',
     strip.background = element_blank(),
     axis.title = element_blank(), 
-    axis.text = element_text(size = 7)
+    axis.text = element_text(size = 8)
   )
 
 toplo1 <- chgtrnd %>% 
@@ -717,7 +728,7 @@ p1 <- ggmap(bsmap1_transparent) +
   scale_shape_manual('Trend', values = c(24, 25)) + 
   pthm +
   scale_size(range = c(1, 6), guide = F) +
-  guides(fill = guide_colourbar(barheight = 0.5, barwidth = 6)) +
+  guides(fill = guide_colourbar(barheight = 0.5, barwidth = 8)) +
   labs(
     subtitle = '(a) Percent change between year pairs'
   )
@@ -732,7 +743,7 @@ p2 <- ggmap(bsmap1_transparent) +
   scale_shape_manual('Trend', values = c(24, 25)) + 
   pthm +
   scale_size(range = c(1, 6), guide = F) +
-  guides(fill = guide_colourbar(barheight = 0.5, barwidth = 6)) +
+  guides(fill = guide_colourbar(barheight = 0.5, barwidth = 8)) +
   labs(
     subtitle = '(b) Annual rates of change across seasons by decade'
   )

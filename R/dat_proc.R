@@ -490,7 +490,6 @@ modstr <- list(
   SYDI = SYDI
 )
 
-
-anlz_fit(mods = modstr)
+# lapply(modstr, anlz_fit)
 
 save(modstr, file = 'data/modstr.RData', compress = 'xz')
