@@ -241,6 +241,8 @@ The different trend analysis methods provided conflicting information on the mag
 
 Explain increasing resolution of methods, e.g., test/base, to seasonal averages, to mixed-meta, to moving window approach
 
+Explain how choosing window widths and time periods is a user choice that is arbitrary, identifying an objective approach to identifying trends can pave the way for future work (parallels with mgcv?)
+
 # Conclusions
 
 # Acknowledgments
@@ -807,13 +809,170 @@ knitr::include_graphics('figs/winchg.png')
 ```
 
 ```{r, results = 'hide', message = F}
+show_cmpplo <- function(fl, doystr, doyend, yrstr, yrend, ttl, ymax = NULL, 
+                        ylab = expression(paste("Chl-a (", italic(mu), "g ", L^-1, ")"))){
+    
+  load(file = fl)
+  nm <- basename(fl)
+  nm <- gsub('\\.RData', '', nm)
+  mod <- get(nm) %>%
+    pull(model) %>%
+    deframe()
+  
+  # data to model
+  tomod1 <- mod$model %>%
+    mutate(
+      yr = floor(cont_year),
+      doy = yday(date_decimal(cont_year))
+    ) %>%
+    filter(doy >= doystr & doy <= doyend) %>%
+    group_by(yr) %>%
+    summarise(
+      avg = mean(value, na.rm = T),
+      sdavg = sd(value, na.rm = T),
+      .groups = 'drop'
+      ) %>%
+    mutate(bt_avg = 10^(avg + (sdavg^2) / 2))
+  avgseas <- anlz_avgseason(mod = mod, doystr = doystr, doyend = doyend)
+  tomod2 <- avgseas %>%
+    filter(yr <= yrend & yr >= yrstr) %>%
+    mutate(S = se^2)
+  
+  # model
+  obmod <- tomod1 %>%
+    filter(yr >= yrstr & yr <= yrend) %>%
+    lm(avg ~ yr, .)
+  lmmod <- lm(avg ~ yr, tomod2)
+  mxmod <- mixmeta::mixmeta(avg ~ yr, S = S, random = ~1|yr, data = tomod2, method = 'reml')
+  
+  # pvalues
+  pval1 <- summary(obmod) %>% coefficients %>% .[2, 4]
+  pval2 <- summary(lmmod) %>% coefficients %>% .[2, 4]
+  pval3 <- summary(mxmod) %>% coefficients %>% .[2, 4]
+  pval1 <- paste0('p = ', round(pval1, 2), ', ', p_ast(pval1))
+  pval2 <- paste0('p = ', round(pval2, 2), ', ', p_ast(pval2))
+  pval3 <- paste0('p = ', round(pval3, 2), ', ', p_ast(pval3))
+  
+  dispersion <- summary(mod)$dispersion
+  s2a <- (summary(obmod)$sigma)^2
+  s2b <- (summary(lmmod)$sigma)^2
+  
+  toplo1 <- data.frame(
+      yr = seq(yrstr, yrend, length = 50)
+    ) %>%
+    dplyr::mutate(
+      avg = predict(obmod, newdata = data.frame(yr = yr)),
+      se = predict(obmod, newdata = data.frame(yr = yr), se.fit = T)$se.fit,
+      bt_lwr = 10^((avg - 1.96 * se) + log(10) * s2a / 2),
+      bt_upr = 10^((avg + 1.96 * se) + log(10) * s2a / 2),
+      bt_avg = 10^(avg + log(10) * s2a / 2)
+    )
+  
+  toplo2 <- data.frame(
+    yr = seq(yrstr, yrend, length = 50)
+    ) %>%
+    dplyr::mutate(
+      avg = predict(lmmod, newdata = data.frame(yr = yr)),
+      se = predict(lmmod, newdata = data.frame(yr = yr), se.fit = T)$se.fit,
+      bt_lwr = 10^((avg - 1.96 * se) + log(10) * dispersion / 2),
+      bt_upr = 10^((avg + 1.96 * se) + log(10) * dispersion / 2),
+      bt_avg = 10^(avg + log(10) * dispersion / 2)
+    )
+  
+  toplo3 <- data.frame(
+    yr = seq(yrstr, yrend, length = 50)
+  ) %>%
+    dplyr::mutate(
+      avg = predict(mxmod, newdata = data.frame(yr = yr)),
+      se = predict(mxmod, newdata = data.frame(yr = yr), se = T)[, 2],
+      bt_lwr = 10^((avg - 1.96 * se) + log(10) * dispersion / 2),
+      bt_upr = 10^((avg + 1.96 * se) + log(10) * dispersion / 2),
+      bt_avg = 10^(avg + log(10) * dispersion / 2)
+    )
+  
+  # y axis limits
+  ylim <- c(0, ymax)
+  if(is.null(ymax))
+    ylim <- c(0, max(avgseas$bt_upr))
+  
+  # plots
+  p1 <- ggplot(data = tomod1, aes(x = yr, y = bt_avg)) +
+    geom_point(colour = 'deepskyblue3') +
+    geom_ribbon(data = toplo1, aes(ymin = bt_lwr, ymax = bt_upr), fill = 'grey', alpha = 0.4) +
+    geom_line(data = toplo1, color = 'grey') +
+    theme_minimal(base_family = 'serif') +
+    coord_cartesian(ylim = ylim, xlim = c(1990, 2020)) +
+    theme(
+      axis.title.x = element_blank(),
+      axis.text.x = element_blank()
+    ) +
+    labs(
+      title = ttl,
+      subtitle = paste('Obesrved regression on raw data,', pval1),
+      y = NULL
+    )
+  
+  p2 <- ggplot(data = avgseas, aes(x = yr, y = bt_avg)) +
+    geom_point(colour = 'deepskyblue3') +
+    geom_ribbon(data = toplo2, aes(ymin = bt_lwr, ymax = bt_upr), fill = 'lightgreen', alpha = 0.4) +
+    geom_line(data = toplo2, color = 'green') +
+    theme_minimal(base_family = 'serif') +
+    coord_cartesian(ylim = ylim, xlim = c(1990, 2020)) +
+    theme(
+      axis.title.x = element_blank(),
+      axis.text.x = element_blank()
+    ) +
+    labs(
+      subtitle = paste('Average regression on GAM estimates,', pval2),
+      y = ylab
+    )
+  
+  p3 <- ggplot(data = avgseas, aes(x = yr, y = bt_avg)) +
+    geom_point(colour = 'deepskyblue3') +
+    geom_errorbar(aes(ymin = bt_lwr, ymax = bt_upr), colour = 'deepskyblue3') +
+    geom_ribbon(data = toplo3, aes(ymin = bt_lwr, ymax = bt_upr), fill = 'pink', alpha = 0.4) +
+    geom_line(data = toplo3, color = 'pink') +
+    theme_minimal(base_family = 'serif') +
+    coord_cartesian(ylim = ylim, xlim = c(1990, 2020)) +
+    theme(
+      axis.title.x = element_blank()
+    ) +
+    labs(
+      subtitle = paste('Mixed-meta regression on GAM estimates', pval3),
+      y = NULL
+    )
+  
+  p <- p1 + p2 + p3 + plot_layout(ncol = 1)
+  
+  return(p)
+
+}
+
+p1 <- show_cmpplo('data/modslog_chl36.RData', doystr = 91, doyend = 181, yrstr = 1991, yrend = 2000, 
+                  ttl =  '(a) Station 36, Apr-Jun chl. averages', ymax = NULL)
+p2 <- show_cmpplo('data/modslog_chl22.RData', doystr = 274, doyend = 364, yrstr = 2000, yrend = 2010, 
+                  ttl =  '(b) Station 22, Oct-Dec chl. averages', ymax = NULL, ylab = NULL)
+# p3 <- show_cmpplo('data/modslog_chl34.RData', doystr = 274, doyend = 364, yrstr = 2010, yrend = 2019, 
+#                   ttl =  '(c) Station 34, Oct-Dec chl. averages', ymax = 15, ylab = NULL)
+
+p <- (p1 |  p2) + plot_layout(ncol = 2)
+png('figs/trndcmpex.png', height = 6.5, width = 7.75, family = 'serif', units = 'in', res = 400)
+p
+dev.off()
+```
+```{r trndcmpex, fig.cap = 'Trend estimate comparisons for three models applied to seasonal averages of chlorophyll in different annual periods at two example stations. The "observed" trend model is based on a linear fit to the annual averages of chloropyll from the observed data, the "average" trend model is based on a linear fit to the annual averages of chlorophyll from the GAM model, and the "mixed-meta" trend model is based on a mixed-meta regression model fit to the annual averages of chlorophyll from the GAM model.  Regressions in each plot are fit through the seasonal estimates indicated in the plot titles.'}
+knitr::include_graphics('figs/trndcmpex.png')
+```
+
+```{r, results = 'hide', message = F}
 toplo <- cmptrnd
-p <- ggplot(toplo, aes(y = station, x = yrcoef, shape = mod, colour = pval)) + 
+p <- ggplot(toplo, aes(y = station, x = yrcoef, shape = modtyp, colour = pval)) + 
   facet_grid(seas ~ yrs, scales = 'free_x') + 
   geom_point(size = 3, position = position_dodge(width = 0.5), alpha = 0.6) + 
   scale_shape('Trend model') + 
   scale_colour_discrete_diverging(name = 'Trend', palette = 'BlueRed2') +
   geom_vline(xintercept = 0, linetype = 'dashed') + 
+  # scale_x_continuous(limits = c(-1, 1)) +
   theme_minimal() + 
   theme(
     strip.background = element_blank(),
@@ -826,11 +985,11 @@ p <- ggplot(toplo, aes(y = station, x = yrcoef, shape = mod, colour = pval)) +
     x = expression(paste("Chl-a change (", italic(mu), "g ", L^-1, yr^-1, ")"))
   )
 
-png('figs/trndcmp.png', height = 5, width = 7.5, family = 'serif', units = 'in', res = 400)
+png('figs/trndcmp.png', height = 8, width = 7.5, family = 'serif', units = 'in', res = 400)
 p
 dev.off()
 ```
-```{r trndcmp, fig.cap = 'Trend estimate comparisons for three models applied to seasonal averages of chlorophyll in different annual periods at each station. The "observed" trend model is based on a linear fit to the annual averages of chloropyll from the observed data, the "average" trend model is based on a linear fit to the annual averages of chlorophyll from the GAM constant season* model, and the "mixed-meta" trend model is based on a mixed-meta regression model fit to the annual averages of chlorophyll from the GAM constant season* model.  Values for each model are the slope esimates as annual change per year within each season, with color denoting significant trends.'}
+```{r trndcmp, fig.cap = 'Trend estimate comparisons for three models applied to seasonal averages of chlorophyll in different annual periods at each station. The "observed" trend model is based on a linear fit to the annual averages of chloropyll from the observed data, the "average" trend model is based on a linear fit to the annual averages of chlorophyll from the GAM model, and the "mixed-meta" trend model is based on a mixed-meta regression model fit to the annual averages of chlorophyll from the GAM model.  Values for each model are the slope esimates as annual change per year within each season, with color denoting significant trends.'}
 knitr::include_graphics('figs/trndcmp.png')
 ```
 
@@ -942,43 +1101,6 @@ totab <- modprf %>%
 cap <- 'Model performance statistics for each station as generalized cross-validation scores (GCV) and r-squared values.'
 
 knitr::kable(totab, booktabs = T, caption = cap)
-```
-
-```{r seastrndtab, tab.cap = 'Seasonal trends from `Const seas*` results by station and decade.  Results show the annual slope estimate as chlorophyll change per year for each seasonal period across years (JFM: January, February, March; AMJ: April, May, June; JAS: July, August, September, OND: October, November, December).  Significant trends based on mixed-meta regression analysis are indicated with asterisks at $\\alpha = 0.05$, * $p< 0.05$, and ** $p < 0.005$.'}
-totab <- seastrnd %>% 
-  mutate(
-    pval = p_ast(pval),
-    pval = gsub('ns', '', pval), 
-    yrcoef = round(yrcoef, 2)
-    ) %>% 
-  unite('yrcoef', yrcoef, pval, sep = '') %>% 
-  spread(seas, yrcoef) %>% 
-  mutate(
-    station = ifelse(duplicated(station), '', station)
-  )
-
-boldjfm <- grep('\\*', totab$JFM)
-boldamj <- grep('\\*', totab$AMJ)
-boldjas <- grep('\\*', totab$JAS)
-boldond <- grep('\\*', totab$OND)
-
-tab <- flextable(totab) %>% 
-  set_header_labels(
-    station = 'Station', 
-    yrs = 'Years'
-  ) %>% 
-  add_header_row(values = c('', '', 'Chlorophyll change (ug/l) per year', '', '', '')) %>% 
-  merge_at(i = 1, j = 3:6, part = 'header') %>% 
-  bold(i = boldjfm, j = 'JFM') %>% 
-  bold(i = boldamj, j = 'AMJ') %>% 
-  bold(i = boldjas, j = 'JAS') %>% 
-  bold(i = boldond, j = 'OND') %>% 
-  border_remove() %>% 
-  hline_top(border = fp_border(color = 'black')) %>% 
-  font(fontname = 'Times', part = 'all') %>%
-  fontsize(size = 12, part = 'all') %>%   
-  width(j = c(2), width = 1) 
-tab
 ```
 
 # Supplement

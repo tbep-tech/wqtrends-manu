@@ -337,10 +337,10 @@ cmptrnd <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
   crossing(
     fl = ., 
     tibble(
-      # doystr = c(1, 91, 182, 274), 
-      # doyend = c(90, 181, 273, 364)
-      doystr = c(41, 213), 
-      doyend = c(213, 338)
+      doystr = c(1, 91, 182, 274),
+      doyend = c(90, 181, 273, 364)
+      # doystr = c(41, 213), 
+      # doyend = c(213, 338)
     ), 
     tibble(
       yrstr = c(1991, 2000, 2010),
@@ -381,20 +381,20 @@ cmptrnd <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
     }),
     metatrnd = purrr::pmap(list(avgseason = avgseas, yrstr = yrstr, yrend = yrend), anlz_mixmeta),
     lmtrnd = purrr::pmap(list(avgseas, yrstr, yrend), function(avgseas, yrstr, yrend){
-
+      
       out <- avgseas %>% 
         filter(yr >= yrstr & yr <= yrend) %>% 
         lm(avg ~ yr, .)
       
       return(out)
+      
     }), 
     obstrnd = purrr::pmap(list(doystr, doyend, mod, yrstr, yrend), function(doystr, doyend, mod, yrstr, yrend){
-
+      
       moddat <- mod$model %>% 
         mutate(
           yr = floor(cont_year), 
           doy = yday(date_decimal(cont_year)),
-          value = 10 ^ value
         ) %>% 
         filter(doy >= doystr & doy <= doyend) %>% 
         filter(yr >= yrstr & yr <= yrend) %>% 
@@ -407,12 +407,30 @@ cmptrnd <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
     })
   ) %>% 
   ungroup %>% 
-  select(-mod, -avgseas) %>% 
-  gather('mod', 'est', metatrnd, lmtrnd, obstrnd) %>% 
+  select(-avgseas) %>% 
+  gather('modtyp', 'est', metatrnd, lmtrnd, obstrnd) %>% 
   mutate(
-    yrcoef = purrr::pmap(list(mod, est), function(mod, est){
+    yrcoef = purrr::pmap(list(mod, modtyp, est), function(mod, modtyp, est){
       
-      est$coefficients[[2]]
+      if(modtyp %in% c('metatrnd', 'lmtrnd')){
+        
+        dispersion <- summary(mod)$dispersion
+        bt_prd <- 10 ^ (predict(est) + log(10) * dispersion / 2)
+        df <- data.frame(chl = bt_prd, yr = est$model$yr)
+        slope <- lm(chl ~ yr, df) %>% summary %>% coefficients %>% .[2, 1]
+        
+      }
+      
+      if(modtyp %in% 'obstrnd'){
+        
+        s2 <- (summary(est)$sigma)^2
+        bt_prd <- 10 ^ (predict(est) + log(10) * s2 / 2)
+        df <- data.frame(chl = bt_prd, yr = est$model$yr)
+        slope <- lm(chl ~ yr, df) %>% summary %>% coefficients %>% .[2, 1]
+        
+      }
+      
+      return(slope)
       
     }),
     pval = purrr::map(est, function(x){
@@ -424,17 +442,17 @@ cmptrnd <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
       
     })
   ) %>% 
-  select(station = fl, seas = doystr, yrs = yrstr, mod, yrcoef, pval) %>% 
+  select(station = fl, seas = doystr, yrs = yrstr, modtyp, yrcoef, pval) %>% 
   mutate(
     station = gsub('^data/modslog\\_chl|\\.RData$', '', station),
-    seas = factor(seas, levels = c('41', '213'), labels = c('Jan-Jun', 'Jul-Dec')),
+    seas = factor(seas, levels = c('1', '91', '182', '274'), labels = c('Jan-Mar', 'Apr-Jun', 'Jul-Sep', 'Oct-Dec')),
     yrs = case_when(
       yrs < 1995 ~ '1990-2000', 
       yrs >=1995 & yrs < 2005 ~ '2000-2010', 
       yrs >= 2005 ~ '2010-2019'
     ), 
     yrs = factor(yrs), 
-    mod = factor(mod, levels = c('obstrnd', 'lmtrnd', 'metatrnd'), labels = c('Observed', 'Average', 'Mixed-meta')), 
+    modtyp = factor(modtyp, levels = c('obstrnd', 'lmtrnd', 'metatrnd'), labels = c('Observed', 'Average', 'Mixed-meta')), 
     pval = ifelse(pval <= 0.05, 'p < 0.05', 'ns')
   ) %>% 
   unnest('yrcoef') %>% 
