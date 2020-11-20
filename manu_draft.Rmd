@@ -38,7 +38,6 @@ data(locs)
 data(modprf)
 data(seastrnd)
 data(seastrnd2)
-data(seastrnd3)
 data(chgtrnd)
 data(cmptrnd)
 data(modstr)
@@ -199,7 +198,7 @@ The standard meta-analysis mixed effects model to estimate linear trends is give
 
 where $\beta_0$ is the intercept, $t$ is the year, $\beta_t$ is the slope, $b_t$ is the random effect for year $t$, and $\epsilon_t$ is the residual for year $t$. Here the seasonal average for year $t$ is $\mu_t = \beta_0 + \beta_t t + b_t$.  The "residual", $\epsilon_t$, represents estimation error in $\hmt$, namely $\hmt - \mt$.  The residuls is assumed to be normally distributed with mean 0 and variance $\hsshmt$, where the latter is estimated from the calculations above.  The random effect, $b_t$, is the difference between $\mt$ and $\beta_0 + \beta_t t$ and is considered the "residual" in the sense of unexplained variation not due to the estimation error.  The random effect is assumed a normal distribution with mean 0 and unknown variance, $\sbs$, to be estimated.
 
-The R package *mixmeta* was used to estimate the model in equation \@ref{eqn:mixmet} [@Sera19].  Results have a similar interpretation as those from regression analysis, but parameter estimates and their standard errors incorporate the known standard errors of the response values.  Following meta-analysis theory, $mixmeta$ evaluates this model as a linear mixed effects model with some variance components fixed, whereas others are estimated ($\sbs$).  The default estimation method for meta-analysis models is restricted maximum likelihood (REML).
+The R package *mixmeta* was used to estimate the model in equation \@ref(eqn:mixmet) [@Sera19].  Results have a similar interpretation as those from regression analysis, but parameter estimates and their standard errors incorporate the known standard errors of the response values.  Following meta-analysis theory, $mixmeta$ evaluates this model as a linear mixed effects model with some variance components fixed, whereas others are estimated ($\sbs$).  The default estimation method for meta-analysis models is restricted maximum likelihood (REML).
 
 We apply this method for windows of a chosen width of years.  This approach evaluates whether there is a significant linear trend in chlorophyll over a chosen series of years, by providing a more comprehensive assessment of all the data in those years (i.e., the seasonal averages, plus their uncertainty).  Some years may have had more sampling, resulting in smaller standard error for $\hmt$, while others may have had less sampling, result in higher standard error. The meta-analysis explicitly includes these differences in uncertainty magnitudes.
 
@@ -217,31 +216,33 @@ minst <- modprf$station[which.min(modprf$R2)]
 maxst <- modprf$station[which.max(modprf$R2)]
 ```
 
-For all results, model S was used with a sufficiently high number of knots in `num_knots_y` to evaluate chlorophyll trends across the monitoring stations in South San Francisco Bay.  This model was chosen because of the relatively quicker processing time to fit the model, while providing nearly identical explanatory power as compared to the other models (Table \@ref(tab:modstrtab)). Chlorophyll trends were generally well-explained across all stations (Table \@ref(tab:modprftab)), with an average R-squared value equal to `r aver2`% and ranging from `r minr2`% (station `r minst`) to `r maxr2`% (station `r maxst`). GAM predictions from north to south on the longitudinal axis provided different descriptions of annual and seasonal changes in chlorophyll (Figure \@ref(fig:prddat)). All models suggested an increase in chlorophyll in the period of record from 1990 to approximately 2005 to 2010, when predictions suggested a decreasing trend until the end of the record. Seasonally, all models indicated a larger spring peak in chlorophyll with more southern stations, whereas a subsequent peak in fall concentrations did not have any noticeable difference in magnitude by location (Figure \@ref(fig:prddat)).  
+For all results, model S was used with a sufficiently high number of knots in `num_knots_y` to evaluate chlorophyll trends across the monitoring stations in South San Francisco Bay.  This model was chosen because of the relatively quicker processing time to fit the model, while providing nearly identical explanatory power as compared to the other models (Table \@ref(tab:modstrtab)). Chlorophyll trends were generally well-explained across all stations (Table \@ref(tab:modprftab)), with an average R-squared value equal to `r aver2`% and ranging from `r minr2`% (station `r minst`) to `r maxr2`% (station `r maxst`). GAM predictions from north to south on the longitudinal axis provided different descriptions of annual and seasonal changes in chlorophyll (Figure \@ref(fig:prddat)). All models suggested an increase in chlorophyll in the period of record from 1990 to approximately 2005 to 2010, followed by a decreasing trend until the end of the record. Seasonally, all models indicated a larger spring peak in chlorophyll, particularly for more southern stations, whereas a subsequent peak in fall concentrations did not have any noticeable difference in magnitude by location (Figure \@ref(fig:prddat)).  
 
 ## Trend estimates
 
-Examples of results provided by the trend tests are shown for station 34, with estimates of percent change between year pairs and seasonal trend results for January to June and July to December for the same year pairs (Figure \@ref(fig:trnddat)).  This figure illustrates the narrative descriptions that can be obtained for each test and the differences that can be observed depending on season.  Figures \@ref(fig:trnddat)a-c demonstrate that average chlorophyll at station 34 from 1990 to 2000 had a 268.4% increase, although the change is insignificant because of large uncertainties in the chlorophyll averages in the first year. Similarly, the change from 2000 to 2010 was an insignificant increase of 11%, followed by an insignificant decrease of 13.9% from 2010 to 2019.  Although these trends were insignificant, the results are based on a priori decisions of which years to compare.  Significant results may be observed for other year pairs.    
+Examples of results provided by the trend tests are shown for station 34, with estimates of percent change between year pairs and seasonal trend results for January to June and July to December for the same year pairs (Figure \@ref(fig:trnddat)).  This figure illustrates the narrative descriptions that can be obtained for each test and the differences that can be observed depending on season.  Figures \@ref(fig:trnddat)a-c demonstrate that average chlorophyll at station 34 from 1990 to 2000 had a 268.4% increase, although the change is insignificant because of large uncertainties in the chlorophyll averages in the first year. However, the change from 2000 to 2010 was an significant increase of 64%, followed by a significant decrease of 35% from 2010 to 2019.  Although these trends were insignificant, the results are based on a priori decisions of which years to compare.    
 
-An assessment of the annual differences indicates if changes overall were observed, but provides no information on seasonal shifts that may have contributed to these differences. Accordingly, figures \@ref(fig:trnddat)d-i show results from mixed-meta regression analysis to evaluate changes across the same year pairs but GAM results for different seasonal periods. Rows d-f show the seasonal averages and trend estimates for the same year periods in rows a-c, but only for months from January to June.  Similarly, rows g-i show the seasonal averages and trend estimates from July to December.  The seasonal trend results suggested that a significant increase in chlorophyll was observed from 1991 to 2000 but only for the January to June period (slope 0.57 ug/L chlorophyll change per year).  Similarly, A significant increase was observed from 2000 to 2010 but only for the July to December period (slope 0.47)  Finally, a significant decrease was observed from 2010 to 2019 but only for the July to December period (slope -0.29). As a result, an assessment of trend changes by season provides a more precise assessment of trends over time and accounts for full uncertainty in estimates across model results. 
+An assessment of the annual differences indicates if changes overall were observed, but provides no information on seasonal shifts that may have contributed to these differences. Accordingly, figures \@ref(fig:trnddat)d-i show results from mixed-meta regression analysis to evaluate changes across the same year pairs but using seasonal averages from GAM results. Rows d-f show the seasonal averages and trend estimates for the same year periods in rows a-c, but only for months from January to June.  Similarly, rows g-i show the seasonal averages and trend estimates from July to December.  The seasonal trend results suggested that a significant increase in chlorophyll was observed from 1991 to 2000 but only for the January to June period (slope 0.58 ug/L chlorophyll change per year).  Similarly, A significant increase was observed from 2000 to 2010 but only for the July to December period (slope 0.58)  Finally, a significant decrease was observed from 2010 to 2019 but only for the July to December period (slope -0.28). As a result, an assessment of trend changes by season provides a more precise assessment of trends over time and accounts for full uncertainty in estimates across model results. 
 
-Spatial variation in trends suggested that most stations in South Bay had increasing chlorophyll from 1990 to 2010 following a decrease in recent years, although not all trends were significant and varied by location (Figure \@ref(fig:trndmap)a).  From 1990 to 2000, only station 18, 32, 34, and 36 had increasing trends that were not significant.  The magnitude of the chlorophyll increase in the southernmost stations (34, 36) was higher during this same period, although the trends were not significant.  From 2000 to 2010, significant increases were observed at the three northern-most stations (18, 21, and 22) and the three southern-most stations (32, 34, 36).  From 2010 to 2019, the three southern-most stations had significant decreases in annual chlorophyll, whereas station 24 had a significant increase during this period.  The spatial trends were further evaluated with mixed-meta regression analysis to provide additional context to the annual changes by evaluating trends from January to June and July to December (Figure \@ref(fig:trndmap)b).  For the January to June period, significant increases were observed at stations 32, 34, and 36 from 1991 to 2000 and station 18 from 2000 to 2010, whereas a significant decrease was observed at station 32 from 2010 to 2019. For the July to December period, significant increases were observed at stations 27 and 30 from 1991 to 2000 and stations 18, 21, 22, and 34 from 2000 to 2010, whereas significant decreases were observed at stations 32 and 34 from 2010 to 2019.
+Spatial variation in trends suggested that most stations in South Bay had increasing chlorophyll from 1990 to 2010 following a decrease in recent years, although not all trends were significant and varied by location (Figure \@ref(fig:trndmap)a).  Comparing years 1990 and 2000, stations 21, 24, 27, and 30 had increasing significant trends.  The magnitude of the chlorophyll increase in the southernmost stations (34, 36) was higher during this same period, although the trends were not significant.  Comparing 2000 and 2010, significant increases were observed at the three northern-most stations (18, 21, and 22) and the three southern-most stations (32, 34, 36).  Comparing 2010 and 2019, the three southern-most stations had significant decreases in annual chlorophyll, whereas station 24 had a significant increase during this period.  The spatial trends were further evaluated with mixed-meta regression analysis to provide additional context to the annual changes by evaluating trends from January to June and July to December (Figure \@ref(fig:trndmap)b).  For the January to June period, significant increases were observed at stations 32, 34, and 36 from 1991 to 2000 and station 18 from 2000 to 2010, whereas a significant decrease was observed at stations 30 and 32 from 2010 to 2019. For the July to December period, significant increases were observed at stations 24, 27, 30, and 32 from 1991 to 2000 and stations 18, 21, 22, and 34 from 2000 to 2010, whereas significant decreases were observed at stations 30, 32, and 34 from 2010 to 2019.
 
-More discrete monthly periods in three month blocks were evaluated to explain a finer resolution of trends from the GAM results (Table \@ref(tab:seastrndtab)).  Many stations and time periods did not show any seasonal chlorophyll trends or only had one or two significant trends at this finer temporal scale.  The JAS (July, August, September) and OND (October, November, December) periods had significant trends that varied by decadal periods in the more northern stations (e.g., 18-27), whereas the southern stations tended to have more significant trends in the AMJ (April, May, June) and JAS periods. Accordingly, table \@ref(tab:seastrndtab) demonstrates the value of obtaining greater insight into seasonal changes by evaluating different blocks as compared to the larger seasonal blocks shown in Figure \@ref(fig:trndmap)b.
-
-A final analysis evaluated a moving window comparison of seasonal trends to provide additional context of when significant changes are occurring at each station (Figure \@ref(fig:winchg)).  Results were obtained using a centered five year window to estimate the slope and significance of a seasonal trend of GAM results from January to June and July to December for each five-year period at each station (note that estimates at the far left and far right of each time series cannot be calculated).  As before, more significant trends were generally observed with the more southern stations, particularly in the July to December period.  Significant increases were observed for both January to June and July to December earlier in the period of record, whereas significant decreases were observed later in the record.  Most stations showed a shift around 2007 when trends switched from significantly increasing to significantly decreasing, particularly in the January to June period.
+A final analysis evaluated a moving window comparison of seasonal trends to provide additional context of when significant changes are occurring at each station (Figure \@ref(fig:winchg)).  Results were obtained using a centered five year window to estimate the slope and significance of a seasonal trend of GAM results from January to June and July to December for each five-year period at each station (note that estimates at the far left and far right of each time series cannot be calculated).  As before, larger trends were generally observed with the more southern stations.  Significant increases were observed for both January to June and July to December earlier in the period of record, whereas significant decreases were observed later in the record until recent years when trends were relatively stable.  Most stations showed a shift around 2007 when trends switched from significantly increasing to significantly decreasing, particularly in the January to June period.
 
 ## Trend comparisons
 
-Trends results from the mixed-meta regression method for each season and different time periods were compared to alternative trend analyses to demonstrate how different and potentially misleading conclusions about trends can arise from methods that insufficiently account for propagation of uncertainty.  As stated above, mixed-meta regression allow for full consideration of uncertainty in trend assessments by explicitly incorporating standard error of averages from results obtained from the GAMs and it is expected that more generalized methods that do not account for uncertainty may lead to different conclusions.  Figure \@ref(fig:trndcmp) shows estimates of chlorophyll change per year for the same seasonal periods and annual groupings as in figure \@ref(fig:trndmap)b.  In addition to mixed-meta analysis, two alternative and more general trend methods were used.  the first method shows slope estimates from a linear regression on annual averages of observed chlorophyll for the specified seasonal period and the second shows slope estimates from a simple linear regression model on annual averages derived from the GAM seasonal estimates.  The latter uses the same averages from the mixed-meta analysis, but is a simpler approach that does not account for the uncertainty in the average estimates. 
+Trends results from the mixed-meta regression method for each season and different time periods were compared to alternative trend analyses to demonstrate how different and potentially misleading conclusions about trends can arise from methods that insufficiently account for propagation of uncertainty.  As stated above, mixed-meta regression allows for full consideration of uncertainty in trend assessments by explicitly incorporating standard error of averages from results obtained from the GAMs and it is expected that more generalized methods that do not account for uncertainty may lead to different conclusions.  Moreoever, the mixed-meta analyses depend on GAM predictions to describe an estimated long-term signal in the observed time series.  Trends assessed on observed data may include substantial noise indendent of any "canonical" signal derived from GAMs.
 
-The different trend analysis methods provided conflicting information on the magnitude and direction of the seasonal chlorophyll changes in each decade (Figure \@ref(fig:trndcmp)).  The slope estimates from the linear model applied to the observed data were understandably more variable than the slope estimate from the GAM average and mixed-meta methods, with much larger slopes observed especially at the more southern stations.  Slope estimates from the linear model applied to the averages from the GAMs as compared to the mixed-meta results were more identical, excluding some of the slope estimates for the southern stations.  The mixed-meta analyses had less significant trends compared to the average results for the same GAM estimates, which reflects the ability of the former to account for uncertainty in the average estimates when considering trends.  Importantly, completely opposite and/or varying significance of trends were observed between the methods, suggesting choice of analysis method can influence the certainty of conclusions.
+These distinctions are demonstrated in Figure \@ref(fig:trndcmpex) for two stations and two time periods, where the significance of trends are compared based on regression through seasonal averages (Figure \@ref(fig:trndcmpex) row 1), regression through GAM estimates (row 2), and mixed-meta regression through GAM estimates (row 3).  The stations and time periods were selected to demonstrate examples where different conclusions can be obtained depending on the methods and characteristics of the data.  For example, Figure \@ref(fig:trndcmpex)a shows trend estimates for station 36 for April to June averages from 1991 to 2000.  Only the mixed-meta regression results are significant in this example.  The observed regression results (top plot) and average regression on GAM estimates (middle plot) did not identify a significant trend.  Figure \@ref(fig:trndcmpex)b shows trend estimates for station 22 for October to December averages form 2000 to 2010.  Unlike the first example, the top two figures show significant trend estimates, whereas the bottom plot for the mixed-meta regression analysis does not show a significant trend because of added uncertainty in the averages provided by the GAMs.  In both cases, only the mixed-meta regression results provide accurate trend estimates because of full propagation of uncertainty across methods. 
+
+Figure \@ref(fig:trndcmp) expands the results in Figure \@ref(fig:trndcmpex) by applying the method comparisons to all stations. As before, the different trend analysis methods provided conflicting information on the magnitude and significance of the seasonal chlorophyll changes in each decade.  The slope estimates from the linear models applied to the observed data were understandably more variable than the slope estimates from the GAM averages and mixed-meta methods, with much larger slopes observed especially at the more southern stations in the January to March period.  Slope estimates from the linear models applied to the averages from the GAMs as compared to the mixed-meta results were more similar, excluding some of the slope estimates for the southern stations.  Differences in significance of trends between the linear models applied to the GAM averages and the mixed-meta analyses were also observed, reflecting the ability of the former to more accurately assess significance of trends by accounting for uncertainty in the average estimates.
 
 # Discussion
 
 Explain increasing resolution of methods, e.g., test/base, to seasonal averages, to mixed-meta, to moving window approach
 
 Explain how choosing window widths and time periods is a user choice that is arbitrary, identifying an objective approach to identifying trends can pave the way for future work (parallels with mgcv?)
+
+Benefits of mixed-meta to provide accurate results, reduces possibility of type I/II errors (e.g., a/b examples in trndcmpex)
 
 # Conclusions
 
@@ -407,8 +408,8 @@ p1b <- show_prddoy(modstr[[2]], ylab = 'SYD: Chl-a (ug/L)', size = 0.8, alpha = 
     legend.position = 'none'
   )
 p1c <- show_prddoy(mods[[3]], ylab = 'SYDI: Chl-a (ug/L)', size = 0.8, alpha = 0.8) + 
-  guides(colour = ggplot2::guide_colourbar(barheight = 15, barwidth = 1)) +
-  scale_colour_gradient(low = "white", high = "black") + 
+  guides(colour = ggplot2::guide_colourbar(barheight = 8, barwidth = 1)) +
+  scale_colour_gradient('Year', low = "white", high = "black") + 
   coord_cartesian(ylim = ylm) +
   theme_minimal() + 
   theme(
@@ -432,8 +433,8 @@ toplo3 <- prds %>%
 p2a <- ggplot(toplo2, aes(x = SY, y = SYD)) + 
   geom_point(alpha = alph) + 
   geom_abline(slope = 1, intercept = 0, color = lncol) + 
-  scale_y_log10() + 
-  scale_x_log10() + 
+  scale_y_log10(limits = ylm) + 
+  scale_x_log10(limits = ylm) + 
   thm + 
   labs(
     title = '(b) Estimated chlorophyll between models'
@@ -441,14 +442,14 @@ p2a <- ggplot(toplo2, aes(x = SY, y = SYD)) +
 p2b <- ggplot(toplo2, aes(x = SYD, y = SYDI)) + 
   geom_point(alpha = alph) + 
   geom_abline(slope = 1, intercept = 0, color = lncol) + 
-  scale_y_log10() + 
-  scale_x_log10() + 
+  scale_y_log10(limits = ylm) + 
+  scale_x_log10(limits = ylm) + 
   thm
 p2c <- ggplot(toplo2, aes(x = SY, y = SYDI)) + 
   geom_point(alpha = alph) + 
   geom_abline(slope = 1, intercept = 0, color = lncol) + 
-  scale_y_log10() + 
-  scale_x_log10() + 
+  scale_y_log10(limits = ylm) + 
+  scale_x_log10(limits = ylm) + 
   thm
 
 p2 <- p2a + p2b + p2c + plot_layout(ncol = 3)
@@ -457,23 +458,23 @@ p2 <- p2a + p2b + p2c + plot_layout(ncol = 3)
 p3a <- ggplot(toplo3, aes(x = SY, y = SYD)) + 
   geom_point(alpha = alph) + 
   geom_abline(slope = 1, intercept = 0, color = lncol) + 
-  scale_y_log10() + 
-  scale_x_log10() + 
+  scale_y_log10(limits = ylm) + 
+  scale_x_log10(limits = ylm) + 
   thm +
   labs(
-    title = '(c) Estimated s(cont_year) between models'
+    title = '(c) Estimated smoother for continuous year between models'
     )
 p3b <- ggplot(toplo3, aes(x = SYD, y = SYDI)) + 
   geom_point(alpha = alph) + 
   geom_abline(slope = 1, intercept = 0, color = lncol) + 
-  scale_y_log10() + 
-  scale_x_log10() + 
+  scale_y_log10(limits = ylm) + 
+  scale_x_log10(limits = ylm) + 
   thm
 p3c <- ggplot(toplo3, aes(x = SY, y = SYDI)) + 
   geom_point(alpha = alph) + 
   geom_abline(slope = 1, intercept = 0, color = lncol) + 
-  scale_y_log10() + 
-  scale_x_log10() + 
+  scale_y_log10(limits = ylm) + 
+  scale_x_log10(limits = ylm) + 
   thm
 
 p3 <- p3a + p3b + p3c + plot_layout(ncol = 3)
@@ -591,12 +592,17 @@ seas <- tibble(
   mutate(
     est = purrr::pmap(list(doystr, doyend, yrstr, yrend), function(doystr, doyend, yrstr, yrend){
       
-      out <- anlz_avgseason(mod, doystr = doystr, doyend = doyend) %>% 
-        anlz_mixmeta(yrstr = yrstr, yrend = yrend) %>% 
-        summary %>% 
-        coef(.) %>% 
-        .[2, ] 
-      out <- data.frame(est = out[['Estimate']], pval = out[['Pr(>|z|)']])
+      mixmet <- anlz_avgseason(mod, doystr = doystr, doyend = doyend) %>% 
+        anlz_mixmeta(yrstr = yrstr, yrend = yrend)
+
+      dispersion <- summary(mod)$dispersion
+      bt_prd <- 10 ^ (predict(mixmet) + log(10) * dispersion / 2)
+      df <- data.frame(chl = bt_prd, yr = mixmet$model$yr)
+      slope <- lm(chl ~ yr, df) %>% summary %>% coefficients %>% .[2, 1]
+      
+      pval <- mixmet %>% summary %>% coefficients %>% .[2, 4]
+      
+      out <- data.frame(est = slope, pval = pval)
      
       return(out)
       
@@ -711,7 +717,7 @@ toplo1 <- chgtrnd %>%
     ) %>% 
   left_join(locs, by = 'station')
 
-toplo2 <- seastrnd2 %>%
+toplo2 <- seastrnd %>%
   mutate(
     station = as.numeric(station),
     pval = ifelse(pval < 0.05, '*', ''), 
@@ -762,7 +768,7 @@ knitr::include_graphics('figs/trndmap.png')
 
 ```{r, results = 'hide', message = F}
 
-toplo <- seastrnd3 %>% 
+toplo <- seastrnd2 %>% 
   na.omit() %>% 
   mutate(
     subttl = ifelse(doystr < 150, '(a) Jan-Jun', '(b) Jul-Dec'),
@@ -787,11 +793,12 @@ p <- ggplot(data = toplo, aes(x = yr, y = yrcoef, fill = pval)) +
     legend.position = 'right', 
     legend.title = element_blank(),
     strip.background = element_blank(), 
+    strip.text = element_text(size = 13),
     axis.text.x = element_text(size = 8, angle = 45, hjust = 1),
     panel.grid.major.x = element_blank(),
-    panel.grid.minor.x = element_blank(), 
-    panel.grid.minor.y = element_blank(), 
-    panel.grid.major.y = element_blank(), 
+    panel.grid.minor.x = element_blank(),
+    panel.grid.minor.y = element_blank(),
+    # panel.grid.major.y = element_blank(), 
     strip.text.x = element_text(size = 12, hjust = 0), 
     axis.ticks = element_line(), 
     panel.spacing.y = grid::unit(1, "lines")

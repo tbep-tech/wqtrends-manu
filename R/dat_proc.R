@@ -85,80 +85,9 @@ modprf <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
 
 save(modprf, file = 'data/modprf.RData', compress = 'xz')
 
-# seasonal trends by decade -----------------------------------------------
-
-seastrnd <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>% 
-  crossing(
-    fl = ., 
-    tibble(
-      doystr = c(1, 91, 182, 274), 
-      doyend = c(90, 181, 273, 364)
-    ), 
-    tibble(
-      yrstr = c(1991, 2000, 2010),
-      yrend = c(2000, 2010, 2019)
-    )
-  ) %>% 
-  group_by(fl) %>% 
-  nest() %>% 
-  mutate(
-    mod = purrr::map(fl, function(x){
-      
-      load(file = x)
-      
-      nm <- basename(x)
-      nm <- gsub('\\.RData', '', nm)
-
-      out <- get(nm) %>%
-        pull(model) %>% 
-        deframe
-      
-      return(out)
-      
-    })
-  ) %>% 
-  unnest(c('data')) %>% 
-  group_by(doystr, doyend, fl, mod) %>%
-  nest() %>%
-  mutate(
-    avgseas = purrr::pmap(list(mod = mod, doystr = doystr, doyend = doyend), anlz_avgseason)
-  ) %>% 
-  unnest('data') %>% 
-  mutate(
-    yrstr = purrr::pmap(list(yrstr, avgseas), function(yrstr, avgseas){
-      max(yrstr, min(avgseas$yr))
-    }), 
-    yrend = purrr::pmap(list(yrend, avgseas), function(yrend, avgseas){
-      min(yrend, max(avgseas$yr))
-    }),
-    metatrnd = purrr::pmap(list(avgseason = avgseas, yrstr = yrstr, yrend = yrend), anlz_mixmeta)
-  ) %>% 
-  mutate(
-    yrcoef = purrr::map(metatrnd, function(x) x$coefficients['yr']), 
-    pval = purrr::map(metatrnd, function(x){
-      coefficients(summary(x)) %>% data.frame %>% .[2, 4]
-    }
-    )
-  ) %>% 
-  ungroup %>% 
-  select(station = fl, seas = doystr, yrs = yrstr, yrcoef, pval) %>% 
-  mutate(
-    station = gsub('^data/modslog\\_chl|\\.RData$', '', station),
-    seas = factor(seas, levels = c('1', '91', '182', '274'), labels = c('JFM', 'AMJ', 'JAS', 'OND')), 
-    yrs = case_when(
-      yrs < 1995 ~ '1990-2000', 
-      yrs >=1995 & yrs < 2005 ~ '2000-2010', 
-      yrs >= 2005 ~ '2010-2019'
-    ), 
-    yrs = factor(yrs)
-  ) %>% 
-  unnest(c('yrcoef', 'pval'))
-
-save(seastrnd, file = 'data/seastrnd.RData', compress = 'xz')
-
 # seasonal trends by decade, jan-jun and jul-dec --------------------------
 
-seastrnd2 <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>% 
+seastrnd <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>% 
   crossing(
     fl = ., 
     tibble(
@@ -205,10 +134,20 @@ seastrnd2 <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
     metatrnd = purrr::pmap(list(avgseason = avgseas, yrstr = yrstr, yrend = yrend), anlz_mixmeta)
   ) %>% 
   mutate(
-    yrcoef = purrr::map(metatrnd, function(x) x$coefficients['yr']), 
+    yrcoef = purrr::pmap(list(mod, metatrnd), function(mod, metatrnd){
+
+      dispersion <- summary(mod)$dispersion
+      bt_prd <- 10 ^ (predict(metatrnd) + log(10) * dispersion / 2)
+      df <- data.frame(chl = bt_prd, yr = metatrnd$model$yr)
+      slope <- lm(chl ~ yr, df) %>% summary %>% coefficients %>% .[2, 1]
+        
+      return(slope)
+      
+      }
+    ), 
     pval = purrr::map(metatrnd, function(x){
       coefficients(summary(x)) %>% data.frame %>% .[2, 4]
-    }
+      }
     )
   ) %>% 
   ungroup %>% 
@@ -225,11 +164,11 @@ seastrnd2 <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
   ) %>% 
   unnest(c('yrcoef', 'pval'))
 
-save(seastrnd2, file = 'data/seastrnd2.RData', compress = 'xz')
+save(seastrnd, file = 'data/seastrnd.RData', compress = 'xz')
 
 # moving window seasonal changes ------------------------------------------
 
-seastrnd3 <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>% 
+seastrnd2 <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>% 
   crossing(
     fl = ., 
     tibble(
@@ -278,7 +217,7 @@ seastrnd3 <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
     station = fl
   )
 
-save(seastrnd3, file = 'data/seastrnd3.RData', compress = 'xz')
+save(seastrnd2, file = 'data/seastrnd2.RData', compress = 'xz')
 
 # decadal percent changes -------------------------------------------------
 
