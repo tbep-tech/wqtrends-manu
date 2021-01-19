@@ -58,7 +58,6 @@ locs <- locs %>%
 
 `r paste('Compiled', Sys.time())`
 
-
 ```{r echo = F, cache = F, eval = F}
 spelling::spell_check_files('manu_draft.Rmd')
 ```
