@@ -19,7 +19,7 @@ jobs:
         run: brew install gdal
       - name: Install R package dependencies
         run: |
-          install.packages(c("rmarkdown", "bookdown", "tidyverse", "flextable", "officer", "ggmap", "sf", "ggsn", 
+          install.packages(c("rmarkdown", "bookdown", "tidyverse", "flextable", "officer", "officedown", "ggmap", "sf", "ggsn", 
               "USAboundaries", "hrbrthemes", "patchwork", "lubridate", "colorspace", "remotes"))
           remotes::install_github('tbep-tech/wqtrends')
           remotes::install_github('fawda123/Jabbrev')
