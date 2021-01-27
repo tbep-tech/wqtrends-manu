@@ -144,6 +144,8 @@ For models SYD and SYDI, the allocation of knots between the different splines c
 
 We visually compare chlorophyll estimates from models SY, SYD, and SYDI to emphasize that similar fits can be achieved by all of the presented models (Figure \@ref(fig:modsumfig), S is identical to SY and is not shown).  Models SY, SYD, and SYDI were fit to chlorophyll data from station 34 using large k values for the arguments `num_knots_y`, `num_knots_D`, `num_knots_Y_ti`, and `num_knots_D_ti` for each model.  Predictions by day of year from each model are visually similar (Figure \@ref(fig:modsumfig)a) and closely follow the 1:1 line (Figure \@ref(fig:modsumfig)b).  However, when contrasting the models using only the continuous year smoother (`s(cont_year)`, as an example), the model fits differ substantially because of structural differences and differences in the penalties applied to the basis functions.  These results are also reflected in differences in the effective degrees of freedom among the additive components of each model (Table \@ref(tab:modstrtab)). Accordingly, even though the models differ by which structural component describes variation in the chlorophyll time series, they provide similar predictions. 
 
+For all results, model S was used with enough knots in `num_knots_y` to evaluate chlorophyll trends across the monitoring stations in South SFE.  This model was chosen because of the relatively quicker processing time to fit the model, while providing nearly identical explanatory power as compared to the other models (Table \@ref(tab:modstrtab)). 
+
 ### Second-stage analysis: Uncertainty propagation from estimated GAMs to seasonal features
 
 \newcommand{\hm}{\hat{\mu}}
@@ -193,6 +195,19 @@ This method was applied to a chosen sequence or "window" of years for estimating
 
 As a final analysis, the chosen sequence of years for evaluating a trend for a seasonal average can be applied across the time series to assess periods of time within which trends could be significant or not (e.g., spring average trend from 1990-2000, 1991-2001, etc.).  Although the initial year sequence and seasonal period to evaluate is chosen by the analyst, applying the method in a moving window approach reduces some of the ambiguity around points in the time series when trends may be changing with reasonable certainty.  The moving window approach applies the meta-analysis model from left to right in the time series across the seasonal averages to obtain the slope and significance of the estimated trend.  We chose a centered window where the model estimates are based on results at equal half-window widths to the left and right of a given year (e.g., an estimate for 1990 for a six year window assesses the trend from 1987 to 1993).  Although a left- or right-centered window could also be applied, we limit the analysis to a centered window to demonstrate the concept.    
 
+### Back-transformation of model results
+
+Model results were back-transformed from log$_{10}$-space to aid in the interpretation of trends. Back-transformation was accomplished using a bias correction factor for model predictions, estimates of mean values, and endpoints of confidence intervals from GAM results.  Using a bias correction factor correctly back-transforms the values to arithmetic space, whereas a simple exponentiation of the results produces under-estimates at the scale of the geometric mean [@Bradu70;@Duan83]. The following equation was used for back-transformation, such that:
+
+\begin{equation}
+E[y] = 10^{\mu + \frac{\log(10) \sigma^2}{2}}
+(\#eq:backtrans)
+\end{equation}
+
+where the back-transformed, expected value of the response variable $y$ (chlorophyll) is a function of the mean value $\mu$ in log$_{10}$-space, corrected by a dispersion estimate $\sigma^2$.  The dispersion is obtained directly from the fitted GAM object as an estimate of the variance of the residuals, corrected by the model degrees of freedom.
+
+Slope estimates that were used to determine significance of a seasonal trend across years from the mixed-meta analysis were not back-transformed.  While it is possible to back-transform model predictions, estimates of the mean values, and endpoints of confidence intervals, it is not possible for slope estimates in log$_{10}$-space that can change in arithmetic space across the values of the independent variable.  However, an "approximate" linear slope was estimated for the mixed-meta regression models as the linear fit across the seasonal averages that were back-transformed using equation \@ref(eq:backtrans).  This was done solely for interpretation of relative change across years, whereas the significance of the slope parameter in log$_{10}$-space from the mixed-meta model was used to assess significance of the trend.  
+
 # Results
 
 ## Model performance and observed results
@@ -205,7 +220,7 @@ minst <- modprf$station[which.min(modprf$R2)]
 maxst <- modprf$station[which.max(modprf$R2)]
 ```
 
-For all results, model S was used with a sufficiently high number of knots in `num_knots_y` to evaluate chlorophyll trends across the monitoring stations in South SFE.  This model was chosen because of the relatively quicker processing time to fit the model, while providing nearly identical explanatory power as compared to the other models (Table \@ref(tab:modstrtab)). Chlorophyll trends were generally well-explained across all stations (Table \@ref(tab:modprftab)), with an average R-squared value equal to `r aver2`% and ranging from `r minr2`% (station `r minst`) to `r maxr2`% (station `r maxst`). GAM predictions from north to south on the longitudinal axis provided different descriptions of annual and seasonal changes in chlorophyll (Figure \@ref(fig:prddat)). All models suggested an increase in chlorophyll in the period of record from 1990 to approximately 2005 to 2010, followed by a decreasing trend until the end of the record. Seasonally, all models indicated a larger spring peak in chlorophyll, particularly for more southern stations, whereas a subsequent peak in fall concentrations did not have any noticeable difference in magnitude by location (Figure \@ref(fig:prddat)).  
+Model predictions for chlorophyll trends across all stations had an average R-squared value equal to `r aver2`%  (Table \@ref(tab:modprftab)) and ranging from `r minr2`% (station `r minst`) to `r maxr2`% (station `r maxst`). GAM predictions from north to south on the longitudinal axis showed more pronounced annual and seasonal changes in chlorophyll towards the more southern stations (Figure \@ref(fig:prddat)). All the models suggested 1) increasing chlorophyll from 1990 until 2005 to 2010, followed by decreasing chlorophyll until the end of the record in 2019, 2) a spring chlorophyll peak, particularly at south Bay stations, and 3) a fall chlorophyll peak that was smaller than the spring peak.  The magnitude of the fall peak did not vary noticeably by location (Figure \@ref(fig:prddat)).  
 
 ## Trend estimates
 
