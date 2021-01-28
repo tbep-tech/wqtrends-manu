@@ -3,6 +3,7 @@ title: "Multi-scale trend analysis of water quality using error propagation of g
 output: 
   bookdown::word_document2:
     reference_docx: my_styles.docx
+    number_sections: false
 always_allow_html: true
 bibliography: refs.bib
 author: "Marcus W. Beck (mbeck@tbep.org), Perry de Valpine (pdevalpine@berkeley.edu), Rebecca Murphy (rmurphy@chesapeakebay.net), Ian Wren (ianw@sfei.org), Ariella Chelsky (ariellac@sfei.org), Melissa Foley (melissaf@sfei.org), David B. Senn (davids@sfei.org)"
@@ -38,7 +39,6 @@ data(locs)
 data(modprf)
 data(seastrnd)
 data(seastrnd2)
-data(chgtrnd)
 data(cmptrnd)
 data(modstr)
 data(modslog_chl18)
@@ -197,16 +197,16 @@ As a final analysis, the chosen sequence of years for evaluating a trend for a s
 
 ### Back-transformation of model results
 
-Model results were back-transformed from log$_{10}$-space to aid in the interpretation of trends. Back-transformation was accomplished using a bias correction factor for model predictions, estimates of mean values, and endpoints of confidence intervals from GAM results.  Using a bias correction factor correctly back-transforms the values to arithmetic space, whereas a simple exponentiation of the results produces under-estimates at the scale of the geometric mean [@Bradu70;@Duan83]. The following equation was used for back-transformation, such that:
+Model results were back-transformed from log$_{10}$-space to aid in the interpretation of trends [@Bradu70;@Duan83]. Back-transformation was accomplished using equation \@ref(eq:backtrans) for model predictions, estimates of mean values, and endpoints of confidence intervals from GAM results, such that:
 
 \begin{equation}
 E[y] = 10^{\mu + \frac{\log(10) \sigma^2}{2}}
 (\#eq:backtrans)
 \end{equation}
 
-where the back-transformed, expected value of the response variable $y$ (chlorophyll) is a function of the mean value $\mu$ in log$_{10}$-space, corrected by a dispersion estimate $\sigma^2$.  The dispersion is obtained directly from the fitted GAM object as an estimate of the variance of the residuals, corrected by the model degrees of freedom.
+where the back-transformed, expected value of the response variable $y$ (chlorophyll) is a function of the mean value $\mu$ in log$_{10}$-space and a dispersion estimate $\sigma^2$ from the model.  The dispersion is obtained directly from the fitted GAM object as an estimate of the variance of the residuals divided by the model degrees of freedom.
 
-Slope estimates that were used to determine significance of a seasonal trend across years from the mixed-meta analysis were not back-transformed.  While it is possible to back-transform model predictions, estimates of the mean values, and endpoints of confidence intervals, it is not possible for slope estimates in log$_{10}$-space that can change in arithmetic space across the values of the independent variable.  However, an "approximate" linear slope was estimated for the mixed-meta regression models as the linear fit across the seasonal averages that were back-transformed using equation \@ref(eq:backtrans).  This was done solely for interpretation of relative change across years, whereas the significance of the slope parameter in log$_{10}$-space from the mixed-meta model was used to assess significance of the trend.  
+Slope estimates that were used to determine significance of a seasonal trend across years from the mixed-meta analysis were not back-transformed.  While it is possible to back-transform model predictions, estimates of the mean values, and endpoints of confidence intervals, it is not possible for slope estimates in log$_{10}$-space that can change in arithmetic space across the values of the independent variable.  As such, all results reporting slope estimates as rates of change in chlorophyll per year were reported at the scale of the model in log$_{10}$-space.  
 
 # Results
 
@@ -590,15 +590,6 @@ mod <- modslog_chl34 %>%
   pull(model) %>% 
   deframe()
 
-chg1 <- anlz_perchg(mod, baseyr = 1991, testy = 2000)
-chg2 <- anlz_perchg(mod, baseyr = 2000, testy = 2010)
-chg3 <- anlz_perchg(mod, baseyr = 2010, testy = 2019)
-chg <- bind_rows(chg1, chg2, chg3) %>% 
-  mutate_if(is.numeric, round, 1) %>% 
-  mutate(
-    pval = p_ast(pval)
-  )
-
 seas <- tibble(
   doystr = c(41, 41, 41, 213, 213, 213), 
   doyend = c(213, 213, 213, 338, 338, 338), 
@@ -611,10 +602,9 @@ seas <- tibble(
       mixmet <- anlz_avgseason(mod, doystr = doystr, doyend = doyend) %>% 
         anlz_mixmeta(yrstr = yrstr, yrend = yrend)
 
-      dispersion <- summary(mod)$dispersion
-      bt_prd <- 10 ^ (predict(mixmet) + log(10) * dispersion / 2)
-      df <- data.frame(chl = bt_prd, yr = mixmet$model$yr)
-      slope <- lm(chl ~ yr, df) %>% summary %>% coefficients %>% .[2, 1]
+      slope <- summary(mixmet)$coefficients[2, c(1, 5, 6)]
+      slope <- round(slope, 2)
+      slope <- paste0(slope[1], ' (', slope[2], ', ', slope[3], ')')
       
       pval <- mixmet %>% summary %>% coefficients %>% .[2, 4]
       
@@ -626,10 +616,9 @@ seas <- tibble(
   ) %>% 
   unnest(est) %>% 
   mutate(
-    lets = c('(d)', '(e)', '(f)', '(g)', '(h)', '(i)'), 
+    lets = c('(a)', '(b)', '(c)', '(d)', '(e)', '(f)'), 
     doystr = ifelse(doystr == 41, 'Jan', 'Jul'), 
     doyend = ifelse(doyend == 213, 'Jun', 'Dec'), 
-    est = paste('slope', round(est, 2)),
     pval = p_ast(pval)
   ) %>% 
   unite('seas', doystr, doyend, sep = '-') %>% 
@@ -641,70 +630,55 @@ seas <- tibble(
 ylim <- c(0, 21)
 ylab <- expression(paste("Chlorophyll-a (", mu, "g ", L^-1, ")"))
 
-p1 <- show_perchg(mod, baseyr = 1991, testyr = 2000, ylab = ylab) +
-  labs(
-    subtitle = paste0('(a) 1991: ', chg[[1, 1]],' ug/L, 2000: ', chg[[1, 2]], 'ug/L\nChange: ', chg[[1,3]], '%, ', chg[[1,4]]), 
-    title = NULL
-  )
-p2 <- show_perchg(mod, baseyr = 2000, testyr = 2010, ylab = NULL) +
-  labs(
-    subtitle = paste0('(a) 2000: ', chg[[2, 1]],' ug/L, 2010: ', chg[[2, 2]], 'ug/L\nChange: ', chg[[2, 3]], '%, ', chg[[2, 4]]), 
-    title = NULL
-  )
-p3 <- show_perchg(mod, baseyr = 2010, testyr = 2019, ylab = NULL) +
-  labs(
-    subtitle = paste0('(a) 2010: ', chg[[3, 1]],' ug/L, 2019: ', chg[[3,2]], 'ug/L\nChange: ', chg[[3, 3]], '%, ', chg[[3, 4]]), 
-    title = NULL
-  )
-p4 <- show_avgseason(mod, doystr = 41, doyend = 213, yrstr = 1991, yrend = 2000, ylab = ylab) +
+p1 <- show_avgseason(mod, doystr = 41, doyend = 213, yrstr = 1991, yrend = 2000, ylab = ylab) +
   coord_cartesian(ylim = ylim) + 
   labs(
     subtitle = seas[[1]],
     title = NULL
   )
-p5 <- show_avgseason(mod, doystr = 41, doyend = 213, yrstr = 2000, yrend = 2010, ylab = NULL) +
+p2 <- show_avgseason(mod, doystr = 41, doyend = 213, yrstr = 2000, yrend = 2010, ylab = NULL) +
   coord_cartesian(ylim = ylim) + 
   labs(
     subtitle = seas[[2]], 
     title = NULL
   )
-p6 <- show_avgseason(mod, doystr = 41, doyend = 213, yrstr = 2010, yrend = 2019, ylab = NULL) +
+p3 <- show_avgseason(mod, doystr = 41, doyend = 213, yrstr = 2010, yrend = 2019, ylab = NULL) +
   coord_cartesian(ylim = ylim) +  
   labs(
     subtitle = seas[[3]], 
     title = NULL
   )
-p7 <- show_avgseason(mod, doystr = 213, doyend = 338, yrstr = 1991, yrend = 2000, ylab = ylab) +
+p4 <- show_avgseason(mod, doystr = 213, doyend = 338, yrstr = 1991, yrend = 2000, ylab = ylab) +
   coord_cartesian(ylim = ylim) + 
   labs(
     subtitle = seas[[4]], 
     title = NULL
   )
-p8 <- show_avgseason(mod, doystr = 213, doyend = 338, yrstr = 2000, yrend = 2010, ylab = NULL) +
+p5 <- show_avgseason(mod, doystr = 213, doyend = 338, yrstr = 2000, yrend = 2010, ylab = NULL) +
   coord_cartesian(ylim = ylim) + 
   labs(
     subtitle = seas[[5]], 
     title = NULL
   )
-p9 <- show_avgseason(mod, doystr = 213, doyend = 338, yrstr = 2010, yrend = 2019, ylab = NULL) +
+p6 <- show_avgseason(mod, doystr = 213, doyend = 338, yrstr = 2010, yrend = 2019, ylab = NULL) +
   coord_cartesian(ylim = ylim) + 
   labs(
     subtitle = seas[[6]],
     title = NULL
   )
 
-p <- p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9 + plot_layout(nrow = 3) & 
+p <- p1 + p2 + p3 + p4 + p5 + p6 + plot_layout(nrow = 2) & 
   theme_minimal(base_family = 'serif', base_size = 12) &
   theme(
     axis.title.x = element_blank(),
     legend.position = 'none'
     )
 
-png('figs/trnddat.png', height = 9, width = 11, family = 'serif', units = 'in', res = 400)
+png('figs/trnddat.png', height = 6, width = 11, family = 'serif', units = 'in', res = 400)
 print(p)
 dev.off()
 ```
-```{r trnddat, fig.cap = "Examples of trend tests using results of GAM predictions for station 34.  Plots (a), (b), and (c) show estimates of percent change as the difference of means between year pairs for chlorophyll.  Plots (d) through (i) show seasonal averages and trend estimates over time.  Plot (d), (e), and (f) show trend estimates for January through June and (g), (h), and (i) show trend estimates for July through December.  The trend lines in (d) through (i) estimate the rate of change of chlorophyll per year, reported as the slope in the plot title. ns: not significant, * p < 0.05, ** p < 0.005"}
+```{r trnddat, fig.cap = "Examples of seasonal averages and trend estimates using results of GAM predictions for station 34.  Plots (a), (b), and (c) show trend estimates for January through June and (d), (e), and (f) show trend estimates for July through December.  The trend lines estimate the rate of change of chlorophyll per year, reported as the log$_{10}$-slope (+/- 95 % confidence interval)in the plot title. ns: not significant, * p < 0.05, ** p < 0.005"}
 knitr::include_graphics('figs/trnddat.png')
 ```
 
