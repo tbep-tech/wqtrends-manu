@@ -219,57 +219,6 @@ seastrnd2 <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
 
 save(seastrnd2, file = 'data/seastrnd2.RData', compress = 'xz')
 
-# decadal percent changes -------------------------------------------------
-
-chgtrnd <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>% 
-  crossing(
-    fl = ., 
-    tibble(
-      yrstr = c(1991, 2000, 2010),
-      yrend = c(2000, 2010, 2019)
-    )
-  ) %>% 
-  group_by(fl) %>% 
-  nest() %>% 
-  mutate(
-    mod = purrr::map(fl, function(x){
-      
-      load(file = x)
-      
-      nm <- basename(x)
-      nm <- gsub('\\.RData', '', nm)
-
-      out <- get(nm) %>%  
-        pull(model) %>% 
-        deframe()
-      
-      return(out)
-      
-    })
-  ) %>% 
-  unnest(c('data')) %>% 
-  mutate(
-    perchg = purrr::pmap(list(mod = mod, baseyr = yrstr, testyr = yrend), anlz_perchg)
-  ) %>% 
-  select(-mod) %>% 
-  unnest('perchg') %>% 
-  ungroup %>% 
-  select(station = fl, yrs = yrstr, perchg, pval) %>% 
-  mutate(
-    station = gsub('^data/modslog\\_chl|\\.RData$', '', station),
-    yrs = case_when(
-      yrs < 1995 ~ '1990, 2000', 
-      yrs >=1995 & yrs < 2005 ~ '2000, 2010', 
-      yrs >= 2005 ~ '2010, 2019'
-    ), 
-    yrs = factor(yrs), 
-    persgn = sign(perchg), 
-    persgn = factor(persgn, levels = c('1', '-1'), labels = c('inc', 'dec')), 
-    pval = ifelse(pval < 0.05, 'sig', 'ns')
-  ) 
-
-save(chgtrnd, file = 'data/chgtrnd.RData', compress = 'xz')
-
 # trend model comparisons -------------------------------------------------
 
 cmptrnd <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>% 

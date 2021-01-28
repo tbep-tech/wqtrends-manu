@@ -700,12 +700,6 @@ pthm <- theme_bw(base_family = 'serif', base_size = 12) +
     axis.text = element_text(size = 8)
   )
 
-toplo1 <- chgtrnd %>% 
-  mutate(
-    station = as.numeric(station),
-    pval = ifelse(pval == 'sig', '*', '')
-    ) %>% 
-  left_join(locs, by = 'station')
 
 toplo2 <- seastrnd %>%
   mutate(
