@@ -678,7 +678,7 @@ png('figs/trnddat.png', height = 6, width = 11, family = 'serif', units = 'in', 
 print(p)
 dev.off()
 ```
-```{r trnddat, fig.cap = "Examples of seasonal averages and trend estimates using results of GAM predictions for station 34.  Plots (a), (b), and (c) show trend estimates for January through June and (d), (e), and (f) show trend estimates for July through December.  The trend lines estimate the rate of change of chlorophyll per year, reported as the log$_{10}$-slope (+/- 95 % confidence interval)in the plot title. ns: not significant, * p < 0.05, ** p < 0.005"}
+```{r trnddat, fig.cap = "Examples of seasonal averages and trend estimates using results of GAM predictions for station 34.  Plots (a), (b), and (c) show trend estimates for January through June and (d), (e), and (f) show trend estimates for July through December.  The trend lines estimate the rate of change of chlorophyll per year, reported as the log$_{10}$-slope (+/- 95 % confidence interval) in the plot title. ns: not significant, * p < 0.05, ** p < 0.005"}
 knitr::include_graphics('figs/trnddat.png')
 ```
 
@@ -690,11 +690,12 @@ bsmap1_transparent <- matrix(adjustcolor(bsmap1,
                              nrow = nrow(bsmap1))
 attributes(bsmap1_transparent) <- mapatt
 
-leglab <- expression(paste(log[10], "Chl-a change (", italic(mu), "g ", L^-1, yr^-1, ")"))
+leglab <- expression(paste(log[10], " Chl-a change (", italic(mu), "g ", L^-1, yr^-1, ")"))
 
 pthm <- theme_bw(base_family = 'serif', base_size = 12) +
   theme(
     legend.position = 'top',
+    legend.box = 'vertical', 
     strip.background = element_blank(),
     axis.title = element_blank(), 
     axis.text = element_text(size = 8)
@@ -721,11 +722,11 @@ p <- ggmap(bsmap1_transparent) +
   scale_size(range = c(1, 6), guide = F) +
   guides(fill = guide_colourbar(barheight = 0.5, barwidth = 8)) 
 
-png('figs/trndmap.png', height = 5, width = 6.5, family = 'serif', units = 'in', res = 400)
+png('figs/trndmap.png', height = 6.5, width = 7.5, family = 'serif', units = 'in', res = 400)
 p
 dev.off()
 ```
-```{r trndmap, fig.cap= "Trend estimates (a) between year pairs and (b) across seasons by decade for chlorophyll at each station.  The top plots show percent change comparing the first and last year within a decade and the bottom plots show seasonal estimates of change per year for chlorophyll concentrations for each decade.  Point type, shape, and color represent the direction and magnitude of an estimated trend.  Trends with $p<0.05$ are marked with an asterisk.  All results are from Model `S`."}
+```{r trndmap, fig.cap= "Trend estimates across seasons by decade for chlorophyll at each station. Point type, shape, and color represent the direction and magnitude of an estimated trend as the log$_{10}$ slope for chlorophyll concentration per year.  Trends with $p<0.05$ are marked with an asterisk.  All results are from Model `S`."}
 knitr::include_graphics('figs/trndmap.png')
 ```
 
@@ -744,10 +745,12 @@ toplo <- seastrnd2 %>%
   dplyr::filter(yr <= 2016 & yr >= 1993)
 
 p <- ggplot(data = toplo, aes(x = yr, y = yrcoef, fill = pval)) + 
+  geom_errorbar(ggplot2::aes(ymin = yrcoef_lwr, ymax = yrcoef_upr, color = pval), width = 0) +
   geom_point(shape = 21, size = 3) +
   scale_x_continuous(limits = c(1993, 2016), breaks = seq(1993, 2016)) +
-  scale_y_continuous(limits = c(-2, 2)) +
-  scale_fill_manual(values = c(NA, 'tomato1'), drop = FALSE) +
+  # scale_y_continuous(limits = c(-2, 2)) +
+  scale_color_manual(values = c('black', 'tomato1'), drop = FALSE) +
+  scale_fill_manual(values = c('white', 'tomato1'), drop = FALSE) +
   geom_hline(yintercept = 0) + 
   facet_grid(station ~ subttl) + 
   theme_minimal(base_family = 'serif') + 
@@ -767,14 +770,14 @@ p <- ggplot(data = toplo, aes(x = yr, y = yrcoef, fill = pval)) +
     panel.spacing.y = grid::unit(1, "lines")
   ) +
   labs(
-    y = expression(paste('Chlorophyll change ( ', mu, 'g ', L^-1, yr^-1, ')'))
+    y = expression(paste(log[10], ' Chl-a change ( ', mu, 'g ', L^-1, yr^-1, ')'))
   )
 
 png('figs/winchg.png', height = 8, width = 8, family = 'serif', units = 'in', res = 400)
 print(p)
 dev.off()
 ```
-```{r winchg, fig.cap='Estimates of chlorophyll change per year from applying the mixed-meta analysis across the time series for each station.  Stations are arranged top to bottom from north to south.  Plots in (a) show estimates for seasonal averages from January to June and plots in (b) show estimates for seasonal averages from July to December.  Estimates in a year that are significant are shown in red.'}
+```{r winchg, fig.cap='Estimates of log$_{10}$-chlorophyll change per year from applying the mixed-meta analysis across the time series for each station.  Stations are arranged top to bottom from north to south.  Plots in (a) show estimates for seasonal averages from January to June and plots in (b) show estimates for seasonal averages from July to December.  Estimates in a year that are significant are shown in red.'}
 knitr::include_graphics('figs/winchg.png')
 ```
 
@@ -952,14 +955,14 @@ p <- ggplot(toplo, aes(y = station, x = yrcoef, shape = modtyp, colour = pval)) 
     ) +
   labs(
     y = 'Station (north to south)', 
-    x = expression(paste("Chl-a change (", italic(mu), "g ", L^-1, yr^-1, ")"))
+    x = expression(paste(log[10], " Chl-a change (", italic(mu), "g ", L^-1, yr^-1, ")"))
   )
 
 png('figs/trndcmp.png', height = 8, width = 7.5, family = 'serif', units = 'in', res = 400)
 p
 dev.off()
 ```
-```{r trndcmp, fig.cap = 'Trend estimate comparisons for three models applied to seasonal averages of chlorophyll in different annual periods at each station. The "observed" trend model is based on a linear fit to the annual averages of chlorophyll from the observed data, the "average" trend model is based on a linear fit to the annual averages of chlorophyll from the GAM model, and the "mixed-meta" trend model is based on a mixed-meta regression model fit to the annual averages of chlorophyll from the GAM model.  Values for each model are the slope estimates as annual change per year within each season, with color denoting significant trends.'}
+```{r trndcmp, fig.cap = 'Trend estimate comparisons for three models applied to seasonal averages of chlorophyll in different annual periods at each station. The "observed" trend model is based on a linear fit to the annual averages of chlorophyll from the observed data, the "average" trend model is based on a linear fit to the annual averages of chlorophyll from the GAM model, and the "mixed-meta" trend model is based on a mixed-meta regression model fit to the annual averages of chlorophyll from the GAM model.  Values for each model are the log$_{10}$-slope estimates as annual change per year within each season, with color denoting significant trends.'}
 knitr::include_graphics('figs/trndcmp.png')
 ```
 
