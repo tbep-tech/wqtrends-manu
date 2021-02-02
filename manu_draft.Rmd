@@ -14,7 +14,7 @@ link-citations: true
 
 ```{r setup, echo = F, warning = F, message = F, results = 'hide'}
 # figure path, chunk options
-knitr::opts_chunk$set(fig.path = 'figs/', warning = F, message = F, echo = F, cache = T, dev.args = list(family = 'serif'), dpi = 300, warning = F, cache.path = 'manu_draft_cache/',
+knitr::opts_chunk$set(fig.path = 'figs/', warning = F, message = F, echo = F, cache = F, dev.args = list(family = 'serif'), dpi = 300, warning = F,
   fig.process = function(x) {
   x2 = sub('-\\d+([.][a-z]+)$', '\\1', x)
   if (file.rename(x, x2)) x2 else x
@@ -690,7 +690,7 @@ bsmap1_transparent <- matrix(adjustcolor(bsmap1,
                              nrow = nrow(bsmap1))
 attributes(bsmap1_transparent) <- mapatt
 
-leglab2 <- expression(paste("Chl-a change (", italic(mu), "g ", L^-1, yr^-1, ")"))
+leglab <- expression(paste(log[10], "Chl-a change (", italic(mu), "g ", L^-1, yr^-1, ")"))
 
 pthm <- theme_bw(base_family = 'serif', base_size = 12) +
   theme(
@@ -700,8 +700,7 @@ pthm <- theme_bw(base_family = 'serif', base_size = 12) +
     axis.text = element_text(size = 8)
   )
 
-
-toplo2 <- seastrnd %>%
+toplo <- seastrnd %>%
   mutate(
     station = as.numeric(station),
     pval = ifelse(pval < 0.05, '*', ''), 
@@ -710,39 +709,19 @@ toplo2 <- seastrnd %>%
   ) %>% 
   left_join(locs, by = 'station')
 
-p1 <- ggmap(bsmap1_transparent) +
-  geom_point(data = toplo1, aes(x = lon, y = lat, size = abs(perchg), shape = persgn, fill = perchg, colour = pval)) + #, color = 'black') +
-  geom_text(data = toplo1, aes(x = lon, y = lat, label = pval), nudge_x = 0.04) + 
-  facet_grid( ~ yrs) + 
-  scale_fill_gradient2('Chl-a % change', low = 'green', mid = 'white',  high = 'tomato1', midpoint = 0) +
-  scale_colour_manual(values = c('black', 'black'), guide = F) +
-  coord_map() + 
-  scale_shape_manual('Trend', values = c(24, 25)) + 
-  pthm +
-  scale_size(range = c(1, 6), guide = F) +
-  guides(fill = guide_colourbar(barheight = 0.5, barwidth = 8)) +
-  labs(
-    subtitle = '(a) Percent change between year pairs'
-  )
-
-p2 <- ggmap(bsmap1_transparent) +
-  geom_point(data = toplo2, aes(x = lon, y = lat, size = abs(yrcoef), shape = coefsgn, fill = yrcoef, colour = pval)) + #, color = 'black') +
-  geom_text(data = toplo2, aes(x = lon, y = lat, label = pval), nudge_x = 0.04) + 
+p <- ggmap(bsmap1_transparent) +
+  geom_point(data = toplo, aes(x = lon, y = lat, size = abs(yrcoef), shape = coefsgn, fill = yrcoef, colour = pval)) + #, color = 'black') +
+  geom_text(data = toplo, aes(x = lon, y = lat, label = pval), nudge_x = 0.04) + 
   facet_grid(seas ~ yrs) + 
-  scale_fill_gradient2(leglab2, low = 'green', mid = 'white',  high = 'tomato1', midpoint = 0) +
+  scale_fill_gradient2(leglab, low = 'green', mid = 'white',  high = 'tomato1', midpoint = 0) +
   scale_colour_manual(values = c('black', 'black'), guide = F) +
   coord_map() + 
   scale_shape_manual('Trend', values = c(24, 25)) + 
   pthm +
   scale_size(range = c(1, 6), guide = F) +
-  guides(fill = guide_colourbar(barheight = 0.5, barwidth = 8)) +
-  labs(
-    subtitle = '(b) Annual rates of change across seasons by decade'
-  )
+  guides(fill = guide_colourbar(barheight = 0.5, barwidth = 8)) 
 
-p <- p1 + p2 + plot_layout(ncol = 1, heights = c(0.5, 1)) 
-
-png('figs/trndmap.png', height = 10, width = 6.5, family = 'serif', units = 'in', res = 400)
+png('figs/trndmap.png', height = 5, width = 6.5, family = 'serif', units = 'in', res = 400)
 p
 dev.off()
 ```
