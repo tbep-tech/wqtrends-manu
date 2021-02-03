@@ -359,7 +359,7 @@ continent <- getMap(resolution = 'low') %>%
   st_transform(crs = st_crs(states)) %>% 
   st_buffer(dist = 0) %>% 
   st_union()
-locbuff <- st_buffer(sflocs, dist = 10)
+locbuff <- st_buffer(sflocs, dist = 0.1)
 locbuff2 <- st_buffer(sflocs, dist = 0.07)
 insetbb <- st_buffer(sflocs, dist = 1.5) %>% 
   st_bbox() %>% 
