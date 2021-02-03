@@ -2,7 +2,7 @@
 # README
 
 [![build](https://github.com/tbep-tech/wqtrends-manu/workflows/build/badge.svg)](https://github.com/tbep-tech/wqtrends-manu/actions)
-last manuscript build 2021-01-27 16:12:58
+last manuscript build 2021-02-03 18:01:18
 
 Materials for water quality trends assessment using GAMs
 
