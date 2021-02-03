@@ -30,6 +30,7 @@ library(ggmap)
 library(sf)
 library(ggsn)
 library(USAboundaries)
+library(rworldmap)
 library(hrbrthemes)
 library(patchwork)
 library(lubridate)
@@ -342,6 +343,7 @@ knitr::include_graphics('figs/obsdat.png')
 ```
 
 ```{r, results = 'hide', message = F}
+
 # station locations
 sflocs <- locs %>% 
   st_as_sf(coords = c('lon', 'lat'), crs = 4326)
@@ -351,11 +353,20 @@ states <- us_states() %>%
   filter(!name %in% c('Alaska', 'Hawaii', 'Puerto Rico'))
 castate <- states %>% 
   filter(name %in% 'California')
-locbuff <- st_buffer(sflocs, dist = 0.1)
+continent <- getMap(resolution = 'low') %>% 
+  st_as_sf %>% 
+  filter(continent %in% c('North America', 'South America')) %>% 
+  st_transform(crs = st_crs(states)) %>% 
+  st_buffer(dist = 0) %>% 
+  st_union()
+locbuff <- st_buffer(sflocs, dist = 10)
 locbuff2 <- st_buffer(sflocs, dist = 0.07)
 insetbb <- st_buffer(sflocs, dist = 1.5) %>% 
   st_bbox() %>% 
   st_as_sfc(crs = 4326)
+statebuff <- st_buffer(states, dist = 0.1)
+insetylim <- st_bbox(statebuff)[c('ymin', 'ymax')]
+insetxlim <- st_bbox(statebuff)[c('xmin', 'xmax')]
 
 # basemap
 dat_ext <- unname(st_bbox(locbuff))
@@ -364,8 +375,8 @@ bsmap1 <- get_stamenmap(bbox = dat_ext, maptype = 'terrain-background', zoom = 1
 # change opacity of basemap
 mapatt <- attributes(bsmap1)
 bsmap1_transparent <- matrix(adjustcolor(bsmap1, 
-                                                alpha.f = 0.75), 
-                                    nrow = nrow(bsmap1))
+                                         alpha.f = 0.75), 
+                             nrow = nrow(bsmap1))
 attributes(bsmap1_transparent) <- mapatt
 
 # basemape plus stations
@@ -379,16 +390,21 @@ p1 <- ggmap(bsmap1_transparent) +
   scalebar(locbuff2, dist = 10, dist_unit = 'km', location = 'bottomleft', transform = T, 
            st.color = 'black', border.size = 0.5, st.dist = 0.02, st.size = 4) 
 
-# inset
 p2 <- ggplot() + 
-  geom_sf(data = states, fill = 'white', colour = 'black') + 
-  geom_sf(data = castate, fill = 'grey', colour = 'black') + 
+  geom_sf(data = continent, fill = 'grey', colour = 'grey') + 
+  # geom_sf(data = states, fill = 'grey', colour = 'grey') + 
   geom_sf(data = insetbb, fill = NA, color = 'blue', size = 2) +
-  theme_void()
+  coord_sf(ylim = insetylim, xlim = insetxlim) + 
+  theme_void() +
+  theme( 
+    panel.background = element_rect(fill = '#FFFFFF99', colour = 'white'), 
+    panel.border = element_rect(colour = 'black', fill = 'transparent')
+  )
 
 # final map
 p <- p1 + 
-  inset(ggplotGrob(p2), xmin = -122.3, xmax = -121.97, ymin = 37.75, ymax = 37.95)
+  inset(ggplotGrob(p2), xmin = -122.2, xmax = -121.97, ymin = 37.75, ymax = 37.983)
+p
 
 # save as png
 png('figs/sitemap.png', height = 6.5, width = 5, units = 'in', family = 'serif', res = 300)
