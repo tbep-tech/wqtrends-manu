@@ -1008,7 +1008,9 @@ totab <- rawdat %>%
   unite('var', param, var) %>% 
   mutate(var = factor(var, levels = c('chl_n', 'chl_medv', 'chl_minv', 'chl_maxv'))) %>% 
   left_join(locs, by = 'station') %>% 
-  spread(var, val)
+  spread(var, val) %>% 
+  mutate_at(c('chl_medv', 'chl_minv', 'chl_maxv'), round, 1) %>% 
+  mutate_at(c('lat', 'lon'), round, 3)
 
 tab <- flextable(totab) %>% 
   set_header_labels(
@@ -1022,8 +1024,8 @@ tab <- flextable(totab) %>%
   ) %>% 
   # add_header_row(values = c('', '', '', 'Chl-a (ug/L)', '', '', '')) %>% 
   # merge_at(i = 1, j = 4:7, part = 'header') %>% 
-  colformat_num(j = c(5, 6, 7), digits = 1) %>%
-  colformat_num(j = c(2, 3), digits = 3) %>% 
+  # colformat_num(j = c(5, 6, 7), digits = 1) %>%
+  # colformat_num(j = c(2, 3), digits = 3) %>% 
   align(align = 'right', part = 'header') %>% 
   border_remove() %>% 
   hline_top(border = fp_border(color = 'black')) %>% 
