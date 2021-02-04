@@ -242,7 +242,7 @@ Results from a ten-year moving window comparison of seasonal trends provided add
 
 Results showing trend estimates from mixed-meta regression on GAM seasonal estimates provided different conclusions than those from either OLS regression through seasonal averages from observed data (Figure \@ref(fig:trndcmpex) row 1) or OLS regression through GAM estimates (row 2). Figure \@ref(fig:trndcmpex)a shows trend estimates for station 36 for April to June averages from 1991 to 2000.  Only the mixed-meta regression results shows a trend in this example (based on $p < 0.05$).  The observed regression results (top plot) and average regression on GAM estimates (middle plot) did not identify a trend.  Figure \@ref(fig:trndcmpex)b shows trend estimates for station 22 for October to December averages from 2000 to 2010.  Unlike the first example, the top two figures show trends, whereas the bottom plot for the mixed-meta regression analysis does not show a trend because of added uncertainty in the averages provided by the GAMs.  In both cases, only the mixed-meta regression results provide accurate trend estimates because of full propagation of uncertainty across methods. 
 
-Applying the same comparison to all stations showed that different trend analysis methods provided conflicting information on the magnitude and significance of the seasonal chl-a changes in each decade (Figure \@ref(fig:trndcmp)).  The slope estimates from the OLS models applied to the observed data were understandably more variable than the slope estimates from the GAM averages and mixed-meta methods, with much larger slopes observed especially at the more southern stations in the January to March period.  Slope estimates from the OLS models applied to the averages from the GAMs as compared to the mixed-meta results were more similar, excluding some of the slope estimates for the southern stations.  Differences in significance of trends between the OLS models applied to the GAM averages and the mixed-meta analyses were also observed, reflecting the ability of the former to more accurately assess significance of trends by accounting for uncertainty in the average estimates.
+Applying the same comparison to all stations showed that different trend analysis methods provided conflicting information on the magnitude and significance of the seasonal chl-a changes in each decade (Figure \@ref(fig:trndcmp)).  The slope estimates from the OLS models applied to the observed data were understandably more variable than the slope estimates from the GAM averages and mixed-meta methods, with much larger slopes observed especially at the more southern stations in the January to June period.  Slope estimates from the OLS models applied to the averages from the GAMs as compared to the mixed-meta results were more similar, excluding some of the slope estimates for the southern stations.  Differences in significance of trends between the OLS models applied to the GAM averages and the mixed-meta analyses were also observed, reflecting the ability of the former to more accurately assess significance of trends by accounting for uncertainty in the average estimates.
 
 # Discussion
 
@@ -967,7 +967,7 @@ p <- ggplot(toplo, aes(y = station, x = yrcoef, shape = modtyp, colour = pval)) 
   scale_shape('Trend model') + 
   scale_colour_discrete_diverging(name = 'Trend', palette = 'BlueRed2') +
   geom_vline(xintercept = 0, linetype = 'dashed') + 
-  # scale_x_continuous(limits = c(-1, 1)) +
+  # scale_x_continuous(limits = c(-1.14, 1.14)) +
   theme_minimal() + 
   theme(
     strip.background = element_blank(),
@@ -980,11 +980,11 @@ p <- ggplot(toplo, aes(y = station, x = yrcoef, shape = modtyp, colour = pval)) 
     x = expression(paste(log[10], " chl-a change (", italic(mu), "g ", L^-1, yr^-1, ")"))
   )
 
-png('figs/trndcmp.png', height = 8, width = 7.5, family = 'serif', units = 'in', res = 400)
+png('figs/trndcmp.png', height = 4.5, width = 7.5, family = 'serif', units = 'in', res = 400)
 p
 dev.off()
 ```
-```{r trndcmp, fig.cap = 'Trend estimate comparisons for three models applied to seasonal averages of chl-a in different annual periods at each station. The "observed" trend model is based on a linear fit to the annual averages of chl-a from the observed data, the "average" trend model is based on a linear fit to the annual averages of chl-a from the GAM model, and the "mixed-meta" trend model is based on a mixed-meta regression model fit to the annual averages of chl-a from the GAM model.  Values for each model are the log$_{10}$-slope estimates as annual change per year within each season, with color denoting significant trends.'}
+```{r trndcmp, fig.cap = 'Trend estimate comparisons for three models applied to seasonal averages of chl-a in different annual periods at each station. The "OLS observed" trend model is based on an ordinary least squares (OLS) regression fit to the annual averages of chl-a from the observed data, the "OLS GAM" trend model is based on an OLS regression fit to the annual averages of chl-a from the GAM model, and the "Mixed-meta GAM" trend model is based on a mixed-meta regression fit to the annual averages of chl-a from the GAM model.  Values for each model are the log$_{10}$-slope estimates as annual change per year within each season, with color denoting trend significance.'}
 knitr::include_graphics('figs/trndcmp.png')
 ```
 
