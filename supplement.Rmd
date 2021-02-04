@@ -1,0 +1,191 @@
+---
+title: "Supplement to Multi-scale trend analysis of water quality using error propagation of generalized additive models"
+output: 
+  bookdown::word_document2:
+    reference_docx: my_styles.docx
+    number_sections: false
+always_allow_html: true
+bibliography: refs.bib
+author: "Marcus W. Beck (mbeck@tbep.org), Perry de Valpine (pdevalpine@berkeley.edu), Rebecca Murphy (rmurphy@chesapeakebay.net), Ian Wren (ianw@sfei.org), Ariella Chelsky (ariellac@sfei.org), Melissa Foley (melissaf@sfei.org), David B. Senn (davids@sfei.org)"
+urlcolor: blue
+csl: ecology.csl
+link-citations: true
+---
+
+
+```{r setup, echo = F, warning = F, message = F, results = 'hide'}
+# figure path, chunk options
+knitr::opts_chunk$set(fig.path = 'figs/', warning = F, message = F, echo = F, cache = F, dev.args = list(family = 'serif'), dpi = 300, warning = F,
+  fig.process = function(x) {
+  x2 = sub('-\\d+([.][a-z]+)$', '\\1', x)
+  if (file.rename(x, x2)) x2 else x
+  })
+
+# libraries
+library(Jabbrev)
+library(tidyverse)
+library(wqtrends)
+library(flextable)
+library(officer)
+library(ggmap)
+library(sf)
+library(ggsn)
+library(USAboundaries)
+library(rworldmap)
+library(hrbrthemes)
+library(patchwork)
+library(lubridate)
+library(colorspace)
+
+data(locs)
+data(modprf)
+data(seastrnd)
+data(seastrnd2)
+data(cmptrnd)
+data(modstr)
+data(modslog_chl18)
+data(modslog_chl24)
+data(modslog_chl27)
+data(modslog_chl32)
+data(modslog_chl34)
+
+source('R/funcs.R')
+
+locs <- locs %>% 
+  rename(station = Station)
+
+# # extract bib entries from online
+# bib_scrp('manu_draft.Rmd', 'refs.bib')
+```
+
+`r paste('Last build', Sys.time())`
+
+```{r echo = F, cache = F, eval = F}
+spelling::spell_check_files('manu_draft.Rmd')
+```
+
+A note about the `select` argument in `mgcv`: When `select = TRUE` is included, the comparison between models S and SY changes.  This option tells `mgcv` to penalize the coefficient of the linear terms in the spline.  This would be appropriate if `cont_year` was an explanatory variable subject to variable selection, but it is irrelevant if including both a linear and spline term for `cont_year`.  If `select = TRUE` is used, models S and SY would still be effectively equivalent, but AIC selection would suggest that one model is superior.  This result would be an artifact of the choice in model SY to include a linear trend in `cont_year` both as a separate term and as part of the spline, with the latter subject to penalization.
+
+# Figures
+
+```{r, results = 'hide', message = F}
+# get predictions to plot
+modprds <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>% 
+  enframe() %>% 
+  group_by(value) %>% 
+  nest %>% 
+  mutate(
+    prd = purrr::map(value, function(x){
+      
+      load(file = x)
+      
+      nm <- basename(x)
+      nm <- gsub('\\.RData', '', nm)
+      
+      mod <- get(nm) %>% 
+        pull(model) %>% 
+        deframe()
+      
+      prd <- anlz_prd(mod)
+      
+      return(prd)
+      
+    })
+  ) %>% 
+  ungroup %>% 
+  select(station = value, prd) %>% 
+  mutate(
+    station = gsub('^data/modslog\\_chl|\\.RData$', '', station)
+  ) %>% 
+  unnest('prd')
+
+modobs <- rawdat %>% 
+  filter(param == 'chl')
+ylab <- expression(paste("Chl-a (", mu, "g ", L^-1, ")"))
+
+stas <- unique(modprds$station)
+
+for(sta in stas){
+  
+  toplo1 <- modprds %>% 
+    filter(station %in% sta)
+  toplo2 <- modobs %>% 
+    filter(station %in% sta)
+  
+  p1 <- ggplot2::ggplot(toplo1, ggplot2::aes(x = date)) + 
+    ggplot2::geom_point(data = toplo2, ggplot2::aes(y = value), size = 0.5, colour = 'grey') +
+    ggplot2::geom_line(ggplot2::aes(y = value), size = 0.75, alpha = 0.7) + 
+    ggplot2::scale_color_viridis_d() + 
+    ggplot2::theme_minimal(base_family = 'serif', base_size = 14) + 
+    ggplot2::scale_y_log10(limits = c(0.26, 207)) +
+    ggplot2::theme(
+      legend.position = 'top', 
+      legend.title = ggplot2::element_blank(),
+      strip.background = ggplot2::element_blank()
+    ) + 
+    ggplot2::labs(
+      y = ylab,
+      x = 'Continuous year', 
+      subtitle = paste0('Station ', sta, ' continuous and day of year predictions')
+    )
+  
+  p2 <- ggplot2::ggplot(toplo1, ggplot2::aes(x = doy, group = factor(yr), colour = yr)) + 
+    ggplot2::geom_line(ggplot2::aes(y = value), size = 0.5, alpha = 1) + 
+    ggplot2::theme_minimal(base_family = 'serif', base_size = 14) + 
+    ggplot2::theme(
+      legend.position = 'right', 
+      legend.title = ggplot2::element_blank(), 
+      strip.background = ggplot2::element_blank(), 
+      strip.text = ggplot2::element_blank(), 
+      axis.title.y = ggplot2::element_blank()
+    ) + 
+    ggplot2::scale_colour_gradient(low = "white", high = "black") + 
+    ggplot2::scale_y_log10(limits = c(0.26, 207)) +
+    ggplot2::guides(colour = ggplot2::guide_colourbar(barheight = 10, barwidth = 1)) +
+    ggplot2::labs(
+      x = "Day of year"
+    )
+  p <- p1 + p2 + plot_layout(ncol = 2, width = c(1, 0.5))
+  
+  png(paste0('figs/prddat', sta, '.png'), height = 3.5, width = 9, family = 'serif', units = 'in', res = 400)
+  print(p)
+  dev.off()
+  
+}
+```
+
+```{r prddat18, fig.cap = "GAM predictions for station 18 for model S. The results show predictions across the time series and predictions by day of year.  Observed data in are shown with the gray points."}
+knitr::include_graphics('figs/prddat18.png')
+```
+
+```{r prddat21, fig.cap = "GAM predictions for station 21 for model S. The results show predictions across the time series and predictions by day of year.  Observed data in are shown with the gray points."}
+knitr::include_graphics('figs/prddat21.png')
+```
+
+```{r prddat22, fig.cap = "GAM predictions for station 22 for model S. The results show predictions across the time series and predictions by day of year.  Observed data in are shown with the gray points."}
+knitr::include_graphics('figs/prddat22.png')
+```
+
+```{r prddat24, fig.cap = "GAM predictions for station 24 for model S. The results show predictions across the time series and predictions by day of year.  Observed data in are shown with the gray points."}
+knitr::include_graphics('figs/prddat24.png')
+```
+
+```{r prddat27, fig.cap = "GAM predictions for station 27 for model S. The results show predictions across the time series and predictions by day of year.  Observed data in are shown with the gray points."}
+knitr::include_graphics('figs/prddat27.png')
+```
+
+```{r prddat30, fig.cap = "GAM predictions for station 30 for model S. The results show predictions across the time series and predictions by day of year.  Observed data in are shown with the gray points."}
+knitr::include_graphics('figs/prddat30.png')
+```
+
+```{r prddat32, fig.cap = "GAM predictions for station 32 for model S. The results show predictions across the time series and predictions by day of year.  Observed data in are shown with the gray points."}
+knitr::include_graphics('figs/prddat32.png')
+```
+
+```{r prddat34, fig.cap = "GAM predictions for station 34 for model S. The results show predictions across the time series and predictions by day of year.  Observed data in are shown with the gray points."}
+knitr::include_graphics('figs/prddat34.png')
+```
+
+```{r prddat36, fig.cap = "GAM predictions for station 36 for model S. The results show predictions across the time series and predictions by day of year.  Observed data in are shown with the gray points."}
+knitr::include_graphics('figs/prddat36.png')
+```
