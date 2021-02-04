@@ -201,7 +201,7 @@ seastrnd2 <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
     res = purrr::pmap(list(fl, mod = mod, doystr, doyend), function(fl, mod, doystr, doyend){
       
       # get slope trends
-      out <- anlz_trndseason(mod = mod, doystr = doystr, doyend = doyend, justify = 'center', win = 5)
+      out <- anlz_trndseason(mod = mod, doystr = doystr, doyend = doyend, justify = 'center', win = 10)
       
       return(out)
       
