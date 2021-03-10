@@ -64,7 +64,20 @@ locs <- locs %>%
 spelling::spell_check_files('manu_draft.Rmd')
 ```
 
-A note about the `select` argument in `mgcv`: When `select = TRUE` is included, the comparison between models S and SY changes.  This option tells `mgcv` to penalize the coefficient of the linear terms in the spline.  This would be appropriate if `cont_year` was an explanatory variable subject to variable selection, but it is irrelevant if including both a linear and spline term for `cont_year`.  If `select = TRUE` is used, models S and SY would still be effectively equivalent, but AIC selection would suggest that one model is superior.  This result would be an artifact of the choice in model SY to include a linear trend in `cont_year` both as a separate term and as part of the spline, with the latter subject to penalization.
+# Comments on the `select` argument in `mgcv
+
+ When `select = TRUE` is included, the comparison between models S and SY changes.  This option tells `mgcv` to penalize the coefficient of the linear terms in the spline.  This would be appropriate if `cont_year` was an explanatory variable subject to variable selection, but it is irrelevant if including both a linear and spline term for `cont_year`.  If `select = TRUE` is used, models S and SY would still be effectively equivalent, but AIC selection would suggest that one model is superior.  This result would be an artifact of the choice in model SY to include a linear trend in `cont_year` both as a separate term and as part of the spline, with the latter subject to penalization.
+
+# Back-transformation of model results
+
+Model results were back-transformed from log$_{10}$-space to aid in the interpretation of trends [@Bradu70;@Duan83]. Back-transformation was accomplished using equation \@ref(eq:backtrans) for estimates of mean values and endpoints of confidence intervals from GAM results, such that:
+
+\begin{equation}
+E[y] = 10^{\mu + \frac{\log(10) \sigma^2}{2}}
+(\#eq:backtrans)
+\end{equation}
+
+where the back-transformed, expected value of the response variable $y$ (chl-a) is a function of the predicted value $\mu$ (mean or confidence interval endpoint) in log$_{10}$-space and a dispersion estimate $\sigma^2$ from the model.  The dispersion is the residual variance estimated from the GAM fit.
 
 # Figures
 
