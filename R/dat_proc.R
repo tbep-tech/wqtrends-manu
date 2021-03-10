@@ -341,7 +341,7 @@ cmptrnd <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
       yrs >= 2005 ~ '2010-2019'
     ), 
     yrs = factor(yrs), 
-    modtyp = factor(modtyp, levels = c('obstrnd', 'lmtrnd', 'metatrnd'), labels = c('OLS observed', 'OLS GAM', 'Mixed-meta GAM')), 
+    modtyp = factor(modtyp, levels = c('obstrnd', 'lmtrnd', 'metatrnd'), labels = c('OLS observed', 'OLS GAM', 'Meta-analysis GAM')), 
     pval = ifelse(pval <= 0.05, 'p < 0.05', 'ns')
   ) %>% 
   unnest('yrcoef') %>% 
