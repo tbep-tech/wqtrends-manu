@@ -75,7 +75,6 @@ modprf <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
   ungroup %>% 
   select(-data) %>% 
   unnest('prf') %>% 
-  select(-AIC) %>% 
   mutate(
     value = gsub('^data/modslog\\_chl|\\.RData$', '', value)
   ) %>% 
@@ -298,28 +297,21 @@ cmptrnd <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
   select(-avgseas) %>% 
   gather('modtyp', 'est', metatrnd, lmtrnd, obstrnd) %>% 
   mutate(
-    yrcoef = purrr::pmap(list(mod, modtyp, est), function(mod, modtyp, est){
+    coefs = purrr::map(est, function(x){
       
-      if(modtyp %in% c('metatrnd', 'lmtrnd')){
-        
-        dispersion <- summary(mod)$dispersion
-        bt_prd <- 10 ^ (predict(est) + log(10) * dispersion / 2)
-        df <- data.frame(chl = bt_prd, yr = est$model$yr)
-        slope <- lm(chl ~ yr, df) %>% summary %>% coefficients %>% .[2, 1]
-        
-      }
+      summary(x)$coefficients
       
-      if(modtyp %in% 'obstrnd'){
-        
-        s2 <- (summary(est)$sigma)^2
-        bt_prd <- 10 ^ (predict(est) + log(10) * s2 / 2)
-        df <- data.frame(chl = bt_prd, yr = est$model$yr)
-        slope <- lm(chl ~ yr, df) %>% summary %>% coefficients %>% .[2, 1]
-        
-      }
-      
-      return(slope)
-      
+    }),
+    yrcoef = purrr::map(coefs, function(x){
+      x[2, 1]
+    }),
+    yrcoefupr = purrr::pmap(list(coefs, yrcoef), function(coefs, yrcoef){
+      se <- coefs[2, 2]
+      yrcoef + 1.96 * se
+    }),
+    yrcoeflwr = purrr::pmap(list(coefs, yrcoef), function(coefs, yrcoef){
+      se <- coefs[2, 2]
+      yrcoef - 1.96 * se
     }),
     pval = purrr::map(est, function(x){
       
@@ -330,7 +322,7 @@ cmptrnd <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
       
     })
   ) %>% 
-  select(station = fl, seas = doystr, yrs = yrstr, modtyp, yrcoef, pval) %>% 
+  select(station = fl, seas = doystr, yrs = yrstr, modtyp, yrcoef, yrcoefupr, yrcoeflwr, pval) %>% 
   mutate(
     station = gsub('^data/modslog\\_chl|\\.RData$', '', station),
     # seas = factor(seas, levels = c('1', '91', '182', '274'), labels = c('Jan-Mar', 'Apr-Jun', 'Jul-Sep', 'Oct-Dec')),
@@ -341,10 +333,10 @@ cmptrnd <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
       yrs >= 2005 ~ '2010-2019'
     ), 
     yrs = factor(yrs), 
-    modtyp = factor(modtyp, levels = c('obstrnd', 'lmtrnd', 'metatrnd'), labels = c('OLS observed', 'OLS GAM', 'Meta-analysis GAM')), 
+    modtyp = factor(modtyp, levels = c('obstrnd', 'lmtrnd', 'metatrnd'), labels = c('OLS raw', 'OLS GAM', 'Meta-analysis GAM')), 
     pval = ifelse(pval <= 0.05, 'p < 0.05', 'ns')
   ) %>% 
-  unnest('yrcoef') %>% 
+  unnest(c('yrcoef', 'yrcoefupr', 'yrcoeflwr')) %>% 
   mutate(station = factor(station, levels = rev(unique(station))))
 
 save(cmptrnd, file = 'data/cmptrnd.RData', compress = 'xz')
