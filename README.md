@@ -2,9 +2,8 @@
 # README
 
 [![build](https://github.com/tbep-tech/wqtrends-manu/workflows/build/badge.svg)](https://github.com/tbep-tech/wqtrends-manu/actions)
-last manuscript build 2021-04-09 18:36:04
-
 Materials for water quality trends assessment using GAMs
+[![DOI](https://zenodo.org/badge/249504727.svg)](https://zenodo.org/badge/latestdoi/249504727)
 
 ## Data
 
