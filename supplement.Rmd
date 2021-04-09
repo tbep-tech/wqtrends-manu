@@ -160,7 +160,13 @@ for(sta in stas){
     )
   p <- p1 + p2 + plot_layout(ncol = 2, width = c(1, 0.5))
   
-  tiff(paste0('figs/prddat', sta, '.tiff'), height = 3.5, width = 9, family = 'serif', units = 'in', res = 600, compression = 'lzw')
+  # # save as tiff
+  # tiff(paste0('figs/prddat', sta, '.tiff'), height = 3.5, width = 9, family = 'serif', units = 'in', res = 600, compression = 'lzw')
+  # print(p)
+  # dev.off()
+  
+  # save as png
+  png(paste0('figs/prddat', sta, '.png'), height = 3.5, width = 9, family = 'serif', units = 'in', res = 400)
   print(p)
   dev.off()
   
@@ -168,37 +174,37 @@ for(sta in stas){
 ```
 
 ```{r prddat18, fig.cap = "GAM predictions for station 18 for model S. The results show predictions across the time series and predictions by day of year.  Observed data in are shown with the gray points."}
-knitr::include_graphics('figs/prddat18.tiff')
+knitr::include_graphics('figs/prddat18.png')
 ```
 
 ```{r prddat21, fig.cap = "GAM predictions for station 21 for model S. The results show predictions across the time series and predictions by day of year.  Observed data in are shown with the gray points."}
-knitr::include_graphics('figs/prddat21.tiff')
+knitr::include_graphics('figs/prddat21.png')
 ```
 
 ```{r prddat22, fig.cap = "GAM predictions for station 22 for model S. The results show predictions across the time series and predictions by day of year.  Observed data in are shown with the gray points."}
-knitr::include_graphics('figs/prddat22.tiff')
+knitr::include_graphics('figs/prddat22.png')
 ```
 
 ```{r prddat24, fig.cap = "GAM predictions for station 24 for model S. The results show predictions across the time series and predictions by day of year.  Observed data in are shown with the gray points."}
-knitr::include_graphics('figs/prddat24.tiff')
+knitr::include_graphics('figs/prddat24.png')
 ```
 
 ```{r prddat27, fig.cap = "GAM predictions for station 27 for model S. The results show predictions across the time series and predictions by day of year.  Observed data in are shown with the gray points."}
-knitr::include_graphics('figs/prddat27.tiff')
+knitr::include_graphics('figs/prddat27.png')
 ```
 
 ```{r prddat30, fig.cap = "GAM predictions for station 30 for model S. The results show predictions across the time series and predictions by day of year.  Observed data in are shown with the gray points."}
-knitr::include_graphics('figs/prddat30.tiff')
+knitr::include_graphics('figs/prddat30.png')
 ```
 
 ```{r prddat32, fig.cap = "GAM predictions for station 32 for model S. The results show predictions across the time series and predictions by day of year.  Observed data in are shown with the gray points."}
-knitr::include_graphics('figs/prddat32.tiff')
+knitr::include_graphics('figs/prddat32.png')
 ```
 
 ```{r prddat34, fig.cap = "GAM predictions for station 34 for model S. The results show predictions across the time series and predictions by day of year.  Observed data in are shown with the gray points."}
-knitr::include_graphics('figs/prddat34.tiff')
+knitr::include_graphics('figs/prddat34.png')
 ```
 
 ```{r prddat36, fig.cap = "GAM predictions for station 36 for model S. The results show predictions across the time series and predictions by day of year.  Observed data in are shown with the gray points."}
-knitr::include_graphics('figs/prddat36.tiff')
+knitr::include_graphics('figs/prddat36.png')
 ```

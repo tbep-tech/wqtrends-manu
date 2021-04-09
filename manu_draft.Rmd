@@ -300,12 +300,19 @@ p2 <- ggplot(toplo2, aes(x = mo, y = value, fill = yrcat)) +
   )
 
 p <- p1 + p2 + plot_layout(ncol = 1)
-tiff('figs/obsdat.tiff', height = 7, width = 8, family = 'serif', units = 'in', res = 600, compression = 'lzw')
+
+# save as tiff
+tiff('submission/Fig1.tiff', height = 7, width = 8, family = 'serif', units = 'in', res = 600, compression = 'lzw')
+print(p)
+dev.off()
+
+# save as png
+png('figs/obsdat.png', height = 7, width = 8, family = 'serif', units = 'in', res = 400)
 print(p)
 dev.off()
 ```
 ```{r obsdat, fig.cap = "Observed chl-a concentrations for all stations in central and south San Francisco Estuary (18-36, Figure \\@ref(fig:sitemap)), with (a) annual summer/fall concentrations (Aug - Dec) and (b) monthly concentrations by decade."}
-knitr::include_graphics('figs/obsdat.tiff')
+knitr::include_graphics('figs/obsdat.png')
 ```
 
 ```{r, results = 'hide', message = F}
@@ -372,12 +379,17 @@ p <- p1 +
   inset(ggplotGrob(p2), xmin = -122.2, xmax = -121.97, ymin = 37.75, ymax = 37.983)
 
 # save as tiff
-tiff('figs/sitemap.tiff', height = 6.5, width = 5, units = 'in', family = 'serif', res = 300)
+tiff('submission/Fig2.tiff', height = 6.5, width = 5, units = 'in', family = 'serif', res = 600, compression = 'lzw')
+print(p)
+dev.off()
+
+# save as png
+png('figs/sitemap.png', height = 6.5, width = 5, units = 'in', family = 'serif', res = 400)
 print(p)
 dev.off()
 ```
 ```{r sitemap, fig.cap = 'Station locations in the central and south San Francisco Estuary used for analysis.  See Table \\@ref(tab:sumtab) for station descriptions.  Full dataset described in @Schraga20.'}
-knitr::include_graphics('figs/sitemap.tiff')
+knitr::include_graphics('figs/sitemap.png')
 ```
 
 ```{r, results = 'hide'}
@@ -486,12 +498,19 @@ p3c <- ggplot(toplo3, aes(x = S, y = SYDI)) +
 p3 <- p3a + p3b + p3c + plot_layout(ncol = 3)
 
 out <- p1 / p2 / p3
-tiff('figs/modsumfig.tiff', height = 7, width = 8, units = 'in', family = 'serif', res = 600, compression = 'lzw')
+
+# save as tiff
+tiff('submission/Fig3.tiff', height = 7, width = 8, units = 'in', family = 'serif', res = 600, compression = 'lzw')
+print(out)
+dev.off()
+
+# save as png
+png('figs/modsumfig.png', height = 7, width = 8, units = 'in', family = 'serif', res = 400)
 print(out)
 dev.off()
 ```
 ```{r modsumfig, fig.cap = "GAM output of estimated chl-a at station 32 for models S, SYD, and SYDI.  Model SY is identical to S and is not shown.  Plots in (a) show model predictions by day of year with separate lines for each year.  Plots in (b) show pairwise comparisons of predicted chl-a between the models and plots in (c) show the same comparisons as in (b) but only for results from the estimated smoother for the `cont_year` variable.  The plots demonstrate that results between the models are similar except for a few observations at extreme values (a, b), but they vary in how they allocate contributions to the predictions among different additive splines (c).  The 1:1 lines are in red to facilitate comparisons."}
-knitr::include_graphics('figs/modsumfig.tiff')
+knitr::include_graphics('figs/modsumfig.png')
 ```
 
 ```{r, results = 'hide', message = F}
@@ -583,12 +602,18 @@ p <- p1 + p2 + p3 + p4 + p5 + p6 + plot_layout(nrow = 2) &
     legend.position = 'none'
     )
 
-tiff('figs/trnddat.tiff', height = 6, width = 11, family = 'serif', units = 'in', res = 600, compression = 'lzw')
+# save as tiff
+tiff('submission/Fig4.tiff', height = 6, width = 11, family = 'serif', units = 'in', res = 600, compression = 'lzw')
+print(p)
+dev.off()
+
+# save as png
+png('figs/trnddat.png', height = 6, width = 11, family = 'serif', units = 'in', res = 400)
 print(p)
 dev.off()
 ```
 ```{r trnddat, fig.cap = "Examples of seasonal averages and trend estimates in ten year blocks from meta-analyses using results of GAM predictions for station 34.  Plots (a), (b), and (c) show trend estimates for January to June averages and (d), (e), and (f) show trend estimates for July to December averages.  The trend lines estimate the rate of change of chl-a per year, reported as the log$_{10}$-slope (+/- 95 % confidence interval) in the sub-plot titles. ns: not significant at $\\alpha$ = 0.05, * p < 0.05"}
-knitr::include_graphics('figs/trnddat.tiff')
+knitr::include_graphics('figs/trnddat.png')
 ```
 
 ```{r, results = 'hide', message = F}
@@ -631,12 +656,18 @@ p <- ggmap(bsmap1_transparent) +
   scale_size(range = c(1, 6), guide = F) +
   guides(fill = guide_colourbar(barheight = 0.5, barwidth = 8)) 
 
-tiff('figs/trndmap.tiff', height = 6.5, width = 7.5, family = 'serif', units = 'in', res = 600, compression = 'lzw')
+# save as tiff
+tiff('submission/Fig5.tiff', height = 6.5, width = 7.5, family = 'serif', units = 'in', res = 600, compression = 'lzw')
+p
+dev.off()
+
+# save as png
+png('figs/trndmap.png', height = 6.5, width = 7.5, family = 'serif', units = 'in', res = 400)
 p
 dev.off()
 ```
 ```{r trndmap, fig.cap= "Interannual trend estimates of seasonal averages by decade for chl-a at each station. Point type and color represent the direction and magnitude of an estimated trend as the log$_{10}$ slope for chl-a concentration per year.  Trends with $p<0.05$ are marked with an asterisk.  All results are from Model `S`."}
-knitr::include_graphics('figs/trndmap.tiff')
+knitr::include_graphics('figs/trndmap.png')
 ```
 
 ```{r, results = 'hide', message = F}
@@ -682,12 +713,18 @@ p <- ggplot(data = toplo, aes(x = yr, y = yrcoef, fill = pval)) +
     y = expression(paste(log[10], ' chl-a change ( ', mu, 'g ', L^-1, yr^-1, ')'))
   )
 
-tiff('figs/winchg.tiff', height = 8, width = 8, family = 'serif', units = 'in', res = 600, compression = 'lzw')
+# save as tiff
+tiff('submission/Fig6.tiff', height = 8, width = 8, family = 'serif', units = 'in', res = 600, compression = 'lzw')
+print(p)
+dev.off()
+
+# save as png
+png('figs/winchg.png', height = 8, width = 8, family = 'serif', units = 'in', res = 400)
 print(p)
 dev.off()
 ```
 ```{r winchg, fig.cap='Estimates of log$_{10}$ chl-a change per year (+/- 95\\% confidence interval) from applying the meta-analysis across the seasonal averages for each station.  Stations are arranged top to bottom from north to south.  Plots in (a) show estimates for seasonal averages from January to June and plots in (b) show estimates for seasonal averages from July to December. Results are from a ten-year, centered moving window where each point shows a linear trend estimate from five years prior to five years after each year. Estimates prior to 1996 and after 2014 are not available because of an incomplete ten year record for estimating the trend. Significant estimates are shown in red.'}
-knitr::include_graphics('figs/winchg.tiff')
+knitr::include_graphics('figs/winchg.png')
 ```
 
 ```{r, results = 'hide', message = F}
@@ -838,12 +875,19 @@ p2 <- show_cmpplo('data/modslog_chl36.RData', doystr = 213, doyend = 338, yrstr 
 #                   ttl =  '(c) Station 34, Oct-Dec chl. averages', ymax = 15, ylab = NULL)
 
 p <- (p1 |  p2) + plot_layout(ncol = 2)
-tiff('figs/trndcmpex.tiff', height = 6.5, width = 7.75, family = 'serif', units = 'in', res = 600, compression = 'lzw')
+
+# save as tif
+tiff('submission/Fig7.tiff', height = 6.5, width = 7.75, family = 'serif', units = 'in', res = 600, compression = 'lzw')
+p
+dev.off()
+
+# save as png
+png('figs/trndcmpex.png', height = 6.5, width = 7.75, family = 'serif', units = 'in', res = 400)
 p
 dev.off()
 ```
 ```{r trndcmpex, fig.cap = 'Trend estimate comparisons (arithmetic scale) for three models applied to seasonal averages of chl-a in different annual periods at station 36. The first row shows OLS (ordinary least squares) regression applied to seasonal averages of chl-a from the raw data, the second row shows OLS regression applied to seasonal averages of chl-a from the GAM (without error propagation), and the third row shows meta-analysis regression applied to the seasonal averages of chl-a from the GAM.  Regressions in each plot are fit through the seasonal estimates indicated in the plot titles for a specified year range.  These examples on selected periods of time show that slope estimates can be similar, but the confidence intervals vary.'}
-knitr::include_graphics('figs/trndcmpex.tiff')
+knitr::include_graphics('figs/trndcmpex.png')
 ```
 
 ```{r, results = 'hide', message = F}
@@ -872,12 +916,18 @@ p <- ggplot(toplo, aes(y = station, x = yrcoef, linetype = pval, shape = modtyp,
     x = expression(paste(log[10], " chl-a change (", italic(mu), "g ", L^-1, yr^-1, ")"))
   )
 
-tiff('figs/trndcmp.tiff', height = 6, width = 7.5, family = 'serif', units = 'in', res = 600, compression = 'lzw')
+# save as tiff
+tiff('submission/Fig8.tiff', height = 6, width = 7.5, family = 'serif', units = 'in', res = 600, compression = 'lzw')
+p
+dev.off()
+
+# save as png
+png('figs/trndcmp.png', height = 6, width = 7.5, family = 'serif', units = 'in', res = 400)
 p
 dev.off()
 ```
 ```{r trndcmp, fig.cap = 'Trend estimate comparisons for three models applied to seasonal averages of chl-a in different annual periods at each station. The "OLS raw" trend model is based on an ordinary least squares (OLS) regression fit to the seasonal averages of chl-a from the raw data, the "OLS GAM" trend model is based on an OLS regression fit to the seasonal averages of chl-a from the GAM model (without error propagation), and the "Meta-analysis GAM" trend model is based on a meta-analysis regression fit to the seasonal averages of chl-a from the GAM model.  Values for each model are the log$_{10}$-slope estimates (+/- 95\\% confidence interval) as annual change per year within each season, with line style denoting trend significance.'}
-knitr::include_graphics('figs/trndcmp.tiff')
+knitr::include_graphics('figs/trndcmp.png')
 ```
 
 # Tables
