@@ -24,7 +24,6 @@ knitr::opts_chunk$set(fig.path = 'figs/', warning = F, message = F, echo = F, ca
 library(Jabbrev)
 library(tidyverse)
 library(wqtrends)
-library(flextable)
 library(officer)
 library(ggmap)
 library(sf)
@@ -932,7 +931,7 @@ knitr::include_graphics('figs/trndcmp.png')
 
 # Tables
 
-```{r sumtab, tab.cap = 'Station locations, sample sizes (from 1991 to 2019), and summary values (median, minimum, maximum) for chl-a ($\\mu$g L$^{-1}$).  Stations are arranged from north to south.'}
+```{r sumtab}
 totab <- rawdat %>% 
   filter(param %in% c('chl')) %>% 
   group_by(station, param) %>% 
@@ -949,29 +948,24 @@ totab <- rawdat %>%
   left_join(locs, by = 'station') %>% 
   spread(var, val) %>% 
   mutate_at(c('chl_medv', 'chl_minv', 'chl_maxv'), round, 1) %>% 
-  mutate_at(c('lat', 'lon'), round, 3)
+  mutate_at(c('lat', 'lon'), round, 3) %>% 
+  select(
+    Station = station, 
+    Latitude = lat, 
+    Longitude = lon, 
+    n = chl_n, 
+    `Med.` = chl_medv, 
+    `Min.` = chl_minv,
+    `Max.` = chl_maxv
+  )
 
-tab <- flextable(totab) %>% 
-  set_header_labels(
-    station = 'Station', 
-    lat = 'Latitude', 
-    lon = 'Longitude', 
-    chl_n = 'n', 
-    chl_medv = 'Med.', 
-    chl_minv = 'Min.', 
-    chl_maxv = 'Max.'
-  ) %>% 
-  # add_header_row(values = c('', '', '', 'Chl-a (ug/L)', '', '', '')) %>% 
-  # merge_at(i = 1, j = 4:7, part = 'header') %>% 
-  # colformat_num(j = c(5, 6, 7), digits = 1) %>%
-  # colformat_num(j = c(2, 3), digits = 3) %>% 
-  align(align = 'right', part = 'header') %>% 
-  border_remove() %>% 
-  hline_top(border = fp_border(color = 'black')) %>% 
-  font(fontname = 'Times', part = 'all') %>%
-  fontsize(size = 12, part = 'all') %>% 
-  width(j = c(2, 3), width = 0.9) 
-tab
+# table stuff
+cap.val <- 'Station locations, sample sizes (from 1991 to 2019), and summary values (median, minimum, maximum) for chl-a ($\\mu$g L$^{-1}$).  Stations are arranged from north to south.'
+
+tab <- totab
+
+# table
+knitr::kable(tab, booktabs = T, caption = cap.val)
 ```
 
 ```{r modsumtab, eval = T}
