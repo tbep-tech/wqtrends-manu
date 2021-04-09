@@ -8,7 +8,7 @@ always_allow_html: true
 bibliography: refs.bib
 author: "Marcus W. Beck (mbeck@tbep.org), Perry de Valpine (pdevalpine@berkeley.edu), Rebecca Murphy (rmurphy@chesapeakebay.net), Ian Wren (ianw@sfei.org), Ariella Chelsky (ariellac@sfei.org), Melissa Foley (melissaf@sfei.org), David B. Senn (davids@sfei.org)"
 urlcolor: blue
-csl: ecology.csl
+csl: ecological-applications.csl
 link-citations: true
 ---
 
@@ -160,7 +160,7 @@ for(sta in stas){
     )
   p <- p1 + p2 + plot_layout(ncol = 2, width = c(1, 0.5))
   
-  png(paste0('figs/prddat', sta, '.png'), height = 3.5, width = 9, family = 'serif', units = 'in', res = 400)
+  tiff(paste0('figs/prddat', sta, '.tiff'), height = 3.5, width = 9, family = 'serif', units = 'in', res = 600, compression = 'lzw')
   print(p)
   dev.off()
   
@@ -168,37 +168,37 @@ for(sta in stas){
 ```
 
 ```{r prddat18, fig.cap = "GAM predictions for station 18 for model S. The results show predictions across the time series and predictions by day of year.  Observed data in are shown with the gray points."}
-knitr::include_graphics('figs/prddat18.png')
+knitr::include_graphics('figs/prddat18.tiff')
 ```
 
 ```{r prddat21, fig.cap = "GAM predictions for station 21 for model S. The results show predictions across the time series and predictions by day of year.  Observed data in are shown with the gray points."}
-knitr::include_graphics('figs/prddat21.png')
+knitr::include_graphics('figs/prddat21.tiff')
 ```
 
 ```{r prddat22, fig.cap = "GAM predictions for station 22 for model S. The results show predictions across the time series and predictions by day of year.  Observed data in are shown with the gray points."}
-knitr::include_graphics('figs/prddat22.png')
+knitr::include_graphics('figs/prddat22.tiff')
 ```
 
 ```{r prddat24, fig.cap = "GAM predictions for station 24 for model S. The results show predictions across the time series and predictions by day of year.  Observed data in are shown with the gray points."}
-knitr::include_graphics('figs/prddat24.png')
+knitr::include_graphics('figs/prddat24.tiff')
 ```
 
 ```{r prddat27, fig.cap = "GAM predictions for station 27 for model S. The results show predictions across the time series and predictions by day of year.  Observed data in are shown with the gray points."}
-knitr::include_graphics('figs/prddat27.png')
+knitr::include_graphics('figs/prddat27.tiff')
 ```
 
 ```{r prddat30, fig.cap = "GAM predictions for station 30 for model S. The results show predictions across the time series and predictions by day of year.  Observed data in are shown with the gray points."}
-knitr::include_graphics('figs/prddat30.png')
+knitr::include_graphics('figs/prddat30.tiff')
 ```
 
 ```{r prddat32, fig.cap = "GAM predictions for station 32 for model S. The results show predictions across the time series and predictions by day of year.  Observed data in are shown with the gray points."}
-knitr::include_graphics('figs/prddat32.png')
+knitr::include_graphics('figs/prddat32.tiff')
 ```
 
 ```{r prddat34, fig.cap = "GAM predictions for station 34 for model S. The results show predictions across the time series and predictions by day of year.  Observed data in are shown with the gray points."}
-knitr::include_graphics('figs/prddat34.png')
+knitr::include_graphics('figs/prddat34.tiff')
 ```
 
 ```{r prddat36, fig.cap = "GAM predictions for station 36 for model S. The results show predictions across the time series and predictions by day of year.  Observed data in are shown with the gray points."}
-knitr::include_graphics('figs/prddat36.png')
+knitr::include_graphics('figs/prddat36.tiff')
 ```
