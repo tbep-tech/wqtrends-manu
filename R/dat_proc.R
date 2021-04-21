@@ -9,6 +9,15 @@ library(mgcv)
 
 source('R/funcs.R')
 
+# station locations -------------------------------------------------------
+
+data(rawdat)
+
+locs <- read.csv('data/raw/usgs_stations.csv') %>%
+  filter(Station %in% rawdat$station)
+
+save(locs, file = 'data/locs.RData', compress = 'xz')
+
 # chlorophyll models, model S only ----------------------------------------
 
 modssta <- rawdat %>% 
