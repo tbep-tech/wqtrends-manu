@@ -2,8 +2,9 @@
 # README
 
 [![build](https://github.com/tbep-tech/wqtrends-manu/workflows/build/badge.svg)](https://github.com/tbep-tech/wqtrends-manu/actions)
-Materials for water quality trends assessment using GAMs
 [![DOI](https://zenodo.org/badge/249504727.svg)](https://zenodo.org/badge/latestdoi/249504727)
+
+Materials for water quality trends assessment using GAMs
 
 ## Data
 
