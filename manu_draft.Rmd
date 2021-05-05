@@ -39,7 +39,7 @@ data(locs)
 data(modprf)
 data(seastrnd)
 data(seastrnd2)
-data(cmptrnd)
+data(cmptrnd10)
 data(modstr)
 data(modslog_chl18)
 data(modslog_chl24)
@@ -215,13 +215,13 @@ Results from a ten-year moving window comparison of seasonal trends provided add
 
 Results showing trend estimates from meta-analysis on GAM seasonal estimates provided different conclusions than those from either OLS regression through seasonal averages from raw data (Figure \@ref(fig:trndcmpex) row 1) or OLS regression through GAM estimates without uncertainty propagation (Figure \@ref(fig:trndcmpex) row 2). Figure \@ref(fig:trndcmpex)a shows trend estimates for station 36 for January to July averages from 1991 to 2000.  Only the meta-analysis regression results show a trend in this example (based on $p < 0.05$).  The OLS regression on observed estimates (top plot) and OLS regression on GAM estimates (middle plot) did not identify trends.  Figure \@ref(fig:trndcmpex)b shows trend estimates for the same station for July to December averages from 2000 to 2010.  Unlike the first example, only the top figure shows a trend, whereas the bottom two plots do not show trends.  In both cases, only the meta-analysis results give reliable conclusions because of full propagation of uncertainty across methods. Even in cases where the p-value threshold is not of interest, the confidence intervals from the alternative methods will be inaccurate.
 
-Applying the same comparison to all stations showed that different trend analysis methods provided conflicting information on the magnitude and significance of the seasonal chl-a changes in each decade (Figure \@ref(fig:trndcmp)).  In many cases, the slope estimates were similar in magnitude, with some exceptions at the more southern stations where the OLS estimates suggested a larger trend than the meta-analysis methods. More importantly, differences in the magnitude of the confidence intervals between the OLS models applied to the GAM averages and the meta-analyses were also observed, reflecting the ability of the latter to more accurately assess significance of trends by accounting for uncertainty in the average estimates.
+Applying the same comparison to all stations showed that different trend analysis methods provided conflicting information on the magnitude and significance of the seasonal chl-a changes in each decade (Figure \@ref(fig:trndcmp10), see supplement for the same analysis with five and fifteen year time periods).  In many cases, the slope estimates were similar in magnitude, with some exceptions at the more southern stations where the OLS estimates suggested a larger trend than the meta-analysis methods. More importantly, differences in the magnitude of the confidence intervals between the OLS models applied to the GAM averages and the meta-analyses were also observed, reflecting the ability of the latter to more accurately assess significance of trends by accounting for uncertainty in the average estimates.
 
 # Discussion
 
 Propagation of uncertainty from within-year features of estimated GAMs to across-year trends using mixed-effects meta-analysis is a new approach that can address different questions than previous methods. Our approach has several advantages over more conventional approaches for analysis of water quality data from long-term monitoring programs. GAMs are capable of modelling time series with missing observations or irregular sampling which can complicate trend assessment and comparison of trends between locations [@Junninen04;@Racault14].  As noted above, non-parametric approaches (i.e., seasonal Kendall tests) are by far the most common trend analysis methods applied to long-term water quality data [@Hirsch82;@Helsel20].  These methods only assess the direction and significance of comparisons between year pairs, and importantly, do not account for full propagation of uncertainty inherent in raw observations if the raw data are aggregated to meet test requirements.  Aggregation of raw data, e.g., averaging of observations within a year or season to comply with the requirements of Kendall tests, risks loss of information by removing variation between observations at smaller time scales. The logical outcome is increased risk of incorrect conclusions from test results.
 
-Incorrect conclusions on trends can have dramatic consequences for regulated parties under existing water quality compliance frameworks [@Smith01]. Our examples in Figures \@ref(fig:trndcmpex) and \@ref(fig:trndcmp) demonstrate these risks if propagation of uncertainty from raw observations across methods is unaccounted for in trend assessment.  Our assessment of trends using OLS regression applied to seasonal averages from the raw observations is effectively like averaging results within a year and applying a simple Kendall test. In many cases the results may be similar, but loss of information with averaging can lead to increased Type I or II error rates depending on characteristics of the raw data and the method used for their evaluation [@Shabman03]. Our examples demonstrated the potential for incorrect conclusions at specific monitoring locations and at much larger spatial scales across all stations.  
+Incorrect conclusions on trends can have dramatic consequences for regulated parties under existing water quality compliance frameworks [@Smith01]. Our examples in Figures \@ref(fig:trndcmpex) and \@ref(fig:trndcmp10) demonstrate these risks if propagation of uncertainty from raw observations across methods is unaccounted for in trend assessment.  Our assessment of trends using OLS regression applied to seasonal averages from the raw observations is effectively like averaging results within a year and applying a simple Kendall test. In many cases the results may be similar, but loss of information with averaging can lead to increased Type I or II error rates depending on characteristics of the raw data and the method used for their evaluation [@Shabman03]. Our examples demonstrated the potential for incorrect conclusions at specific monitoring locations and at much larger spatial scales across all stations.  
 
 Results here also show that GAM structure (i.e., choice of smoothing terms) was less important than allowing the model sufficient freedom to fit the data. This is an important conclusion that provides guidance on how GAMs could be used to model time series from long-term environmental monitoring programs.  Models with separate smoothers for continuous year and day of year can produce nearly identical results in the predicted trends if the knots are sufficiently high to allow the GAMs to be fit as intended by the methods in the mgcv package (Figure \@ref(fig:modsumfig)).  The approach presented here leverages the ability of GAMs to objectively estimate smoothed trends across years by identifying an optimal level of smoothing using generalized cross-validation to extract an underlying signal in the observed data [@Wood04;@Wood17]. 
 
@@ -890,7 +890,7 @@ knitr::include_graphics('figs/trndcmpex.png')
 ```
 
 ```{r, results = 'hide', message = F}
-toplo <- cmptrnd
+toplo <- cmptrnd10
 p <- ggplot(toplo, aes(y = station, x = yrcoef, linetype = pval, shape = modtyp, colour = modtyp)) + 
   facet_grid(seas ~ yrs, scales = 'free_x') + 
   geom_point(size = 2, position = position_dodge(width = 0.6), alpha = 0.8) + 
@@ -921,12 +921,12 @@ p
 dev.off()
 
 # save as png
-png('figs/trndcmp.png', height = 6, width = 7.5, family = 'serif', units = 'in', res = 400)
+png('figs/trndcmp10.png', height = 6, width = 7.5, family = 'serif', units = 'in', res = 400)
 p
 dev.off()
 ```
-```{r trndcmp, fig.cap = 'Trend estimate comparisons for three models applied to seasonal averages of chl-a in different annual periods at each station. The "OLS raw" trend model is based on an ordinary least squares (OLS) regression fit to the seasonal averages of chl-a from the raw data, the "OLS GAM" trend model is based on an OLS regression fit to the seasonal averages of chl-a from the GAM model (without error propagation), and the "Meta-analysis GAM" trend model is based on a meta-analysis regression fit to the seasonal averages of chl-a from the GAM model.  Values for each model are the log$_{10}$-slope estimates (+/- 95\\% confidence interval) as annual change per year within each season, with line style denoting trend significance.'}
-knitr::include_graphics('figs/trndcmp.png')
+```{r trndcmp10, fig.cap = 'Trend estimate comparisons for three models applied to seasonal averages of chl-a in different annual periods at each station. The "OLS raw" trend model is based on an ordinary least squares (OLS) regression fit to the seasonal averages of chl-a from the raw data, the "OLS GAM" trend model is based on an OLS regression fit to the seasonal averages of chl-a from the GAM model (without error propagation), and the "Meta-analysis GAM" trend model is based on a meta-analysis regression fit to the seasonal averages of chl-a from the GAM model.  Values for each model are the log$_{10}$-slope estimates (+/- 95\\% confidence interval) as annual change per year within each season, with line style denoting trend significance.'}
+knitr::include_graphics('figs/trndcmp10.png')
 ```
 
 # Tables
