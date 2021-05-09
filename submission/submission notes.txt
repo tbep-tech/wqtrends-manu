@@ -1,1 +1,14 @@
-Zipped folders for the manuscript and package repos were provided as supplementary material for review and publication with the submission.  These were obtained from the Zenodo links.
+For STOTEN: 
+
+- change cls, https://www.zotero.org/styles?q=science%20of%20the%20total%20envi
+- recompile manu, supplement
+- manu double space
+- title page by hand (full affiliations), same for supplement
+- figs removed, fig captions kept
+- tables one per page
+- graphical abstract
+- highlights
+- references after acknowledgments
+- manuscript and title page in separate files
+- declaration of interest statement
+- credit author statement

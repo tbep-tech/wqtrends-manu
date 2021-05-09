@@ -8,7 +8,7 @@ always_allow_html: true
 bibliography: refs.bib
 author: "Marcus W. Beck (mbeck@tbep.org), Perry de Valpine (pdevalpine@berkeley.edu), Rebecca Murphy (rmurphy@chesapeakebay.net), Ian Wren (ianw@sfei.org), Ariella Chelsky (ariellac@sfei.org), Melissa Foley (melissaf@sfei.org), David B. Senn (davids@sfei.org)"
 urlcolor: blue
-csl: ecological-applications.csl
+csl: science-of-the-total-environment.csl
 link-citations: true
 ---
 
@@ -64,6 +64,10 @@ locs <- locs %>%
 ```{r echo = F, cache = F, eval = F}
 spelling::spell_check_files('manu_draft.Rmd')
 ```
+
+# Online dashboard
+
+An interactive, online dashboard for viewing results in this manuscript is available at https://nutrient-data.sfei.org/apps/SFbaytrends/.
 
 # Comments on the `select` argument in `mgcv
 
@@ -209,77 +213,5 @@ knitr::include_graphics('figs/prddat34.png')
 ```{r prddat36, fig.cap = "GAM predictions for station 36 for model S. The results show predictions across the time series and predictions by day of year.  Observed data in are shown with the gray points."}
 knitr::include_graphics('figs/prddat36.png')
 ```
-
-```{r, results = 'hide', message = F}
-toplo <- cmptrnd05
-p <- ggplot(toplo, aes(y = station, x = yrcoef, linetype = pval, shape = modtyp, colour = modtyp)) + 
-  facet_grid(seas ~ yrs, scales = 'free_x') + 
-  geom_point(size = 2, position = position_dodge(width = 0.6), alpha = 0.8) + 
-  geom_errorbarh(aes(xmin = yrcoeflwr, xmax = yrcoefupr), position = position_dodge(width = 0.6), height = 0) +
-  scale_linetype_manual('Trend significance', values = c('dashed', 'solid')) + 
-  scale_colour_discrete_qualitative(name = 'Trend model', palette = 'Dark3') +
-  scale_shape(name = 'Trend model') + 
-  geom_vline(xintercept = 0, linetype = 'dashed') + 
-  # scale_x_continuous(limits = c(-1.14, 1.14)) +
-  guides(
-    color = guide_legend(override.aes = list(linetype = 0))
-  ) +
-  theme_minimal() + 
-  theme(
-    strip.background = element_blank(),
-    panel.background = element_rect(fill = 'gray98', colour = NA), 
-    panel.border = element_blank(), 
-    legend.position = 'top', 
-    axis.text.x = element_text(angle = 45, hjust = 1)
-  ) +
-  labs(
-    y = 'Station (north to south)', 
-    x = expression(paste(log[10], " chl-a change (", italic(mu), "g ", L^-1, yr^-1, ")"))
-  )
-
-# save as png
-png('figs/trndcmp05.png', height = 6, width = 7.5, family = 'serif', units = 'in', res = 400)
-p
-dev.off()
-```
-```{r trndcmp05, fig.cap = 'Trend estimate comparisons for three models applied to seasonal averages of chl-a in 5 year periods at each station. The "OLS raw" trend model is based on an ordinary least squares (OLS) regression fit to the seasonal averages of chl-a from the raw data, the "OLS GAM" trend model is based on an OLS regression fit to the seasonal averages of chl-a from the GAM model (without error propagation), and the "Meta-analysis GAM" trend model is based on a meta-analysis regression fit to the seasonal averages of chl-a from the GAM model.  Values for each model are the log$_{10}$-slope estimates (+/- 95\\% confidence interval) as annual change per year within each season, with line style denoting trend significance.'}
-knitr::include_graphics('figs/trndcmp05.png')
-```
-
-```{r, results = 'hide', message = F}
-toplo <- cmptrnd15
-p <- ggplot(toplo, aes(y = station, x = yrcoef, linetype = pval, shape = modtyp, colour = modtyp)) + 
-  facet_grid(seas ~ yrs, scales = 'free_x') + 
-  geom_point(size = 2, position = position_dodge(width = 0.6), alpha = 0.8) + 
-  geom_errorbarh(aes(xmin = yrcoeflwr, xmax = yrcoefupr), position = position_dodge(width = 0.6), height = 0) +
-  scale_linetype_manual('Trend significance', values = c('dashed', 'solid')) + 
-  scale_colour_discrete_qualitative(name = 'Trend model', palette = 'Dark3') +
-  scale_shape(name = 'Trend model') + 
-  geom_vline(xintercept = 0, linetype = 'dashed') + 
-  # scale_x_continuous(limits = c(-1.14, 1.14)) +
-  guides(
-    color = guide_legend(override.aes = list(linetype = 0))
-  ) +
-  theme_minimal() + 
-  theme(
-    strip.background = element_blank(),
-    panel.background = element_rect(fill = 'gray98', colour = NA), 
-    panel.border = element_blank(), 
-    legend.position = 'top'
-  ) +
-  labs(
-    y = 'Station (north to south)', 
-    x = expression(paste(log[10], " chl-a change (", italic(mu), "g ", L^-1, yr^-1, ")"))
-  )
-
-# save as png
-png('figs/trndcmp15.png', height = 6, width = 7.5, family = 'serif', units = 'in', res = 400)
-p
-dev.off()
-```
-```{r trndcmp15, fig.cap = 'Trend estimate comparisons for three models applied to seasonal averages of chl-a in 15 year periods at each station. The "OLS raw" trend model is based on an ordinary least squares (OLS) regression fit to the seasonal averages of chl-a from the raw data, the "OLS GAM" trend model is based on an OLS regression fit to the seasonal averages of chl-a from the GAM model (without error propagation), and the "Meta-analysis GAM" trend model is based on a meta-analysis regression fit to the seasonal averages of chl-a from the GAM model.  Values for each model are the log$_{10}$-slope estimates (+/- 95\\% confidence interval) as annual change per year within each season, with line style denoting trend significance.'}
-knitr::include_graphics('figs/trndcmp15.png')
-```
-
 
 # References
