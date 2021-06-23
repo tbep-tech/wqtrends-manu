@@ -129,7 +129,7 @@ seastrnd <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
   group_by(doystr, doyend, mod, fl) %>% 
   nest() %>% 
   mutate(
-    avgseas = purrr::pmap(list(mod = mod, doystr = doystr, doyend = doyend), anlz_avgseason)
+    avgseas = purrr::pmap(list(mod = mod, doystr = doystr, doyend = doyend), anlz_metseason)
   ) %>% 
   unnest('data') %>% 
   mutate(
@@ -267,7 +267,7 @@ cmptrnd10 <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
   group_by(doystr, doyend, mod, fl) %>% 
   nest() %>% 
   mutate(
-    avgseas = purrr::pmap(list(mod = mod, doystr = doystr, doyend = doyend), anlz_avgseason)
+    avgseas = purrr::pmap(list(mod = mod, doystr = doystr, doyend = doyend), anlz_metseason)
   ) %>% 
   unnest('data') %>% 
   mutate(
@@ -390,7 +390,7 @@ cmptrnd05 <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
   group_by(doystr, doyend, mod, fl) %>% 
   nest() %>% 
   mutate(
-    avgseas = purrr::pmap(list(mod = mod, doystr = doystr, doyend = doyend), anlz_avgseason)
+    avgseas = purrr::pmap(list(mod = mod, doystr = doystr, doyend = doyend), anlz_metseason)
   ) %>% 
   unnest('data') %>% 
   mutate(
@@ -516,7 +516,7 @@ cmptrnd15 <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
   group_by(doystr, doyend, mod, fl) %>% 
   nest() %>% 
   mutate(
-    avgseas = purrr::pmap(list(mod = mod, doystr = doystr, doyend = doyend), anlz_avgseason)
+    avgseas = purrr::pmap(list(mod = mod, doystr = doystr, doyend = doyend), anlz_metseason)
   ) %>% 
   unnest('data') %>% 
   mutate(

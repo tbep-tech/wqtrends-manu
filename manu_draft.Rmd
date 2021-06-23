@@ -52,6 +52,7 @@ source('R/funcs.R')
 locs <- locs %>% 
   rename(station = Station)
 
+nsims <- 1000
 # # extract bib entries from online
 # bib_scrp('manu_draft.Rmd', 'refs.bib')
 ```
@@ -102,27 +103,38 @@ We implemented our analysis in three stages.  First, we used a GAM to estimate a
 
 ### First-stage analysis: GAM estimation
 
-We considered four different GAMs to smooth the raw data across time. Although they can achieve similar fits, they do so by partitioning variation in the time series differently (Table \@ref(tab:modsumtab)). We discuss all four to clarify their relationships and interpretations.  Models are shown in the notation of the `mgcv` R package as formulas for the `gam` function [@Wood17;@RCT20]. 
+We considered four different GAMs to smooth the raw data across time. Although they can achieve similar fits, they do so by partitioning variation in the time series differently (Table \@ref(tab:modsumtab)). We discuss all four to clarify their relationships and interpretations.  All models were created using the `mgcv` R package [@Wood17;@RCT20], with utility functions included in the `wqtrends` package created by the authors [@Beck21]. 
 
 The simplest GAM for this purpose is expressed as:
 
-Model S: `y ~ s(cont_year, k = num_knots_Y)`
+\begin{equation}
+\textrm{Model S:} y_i \sim\ \beta_0 + f_1\left(cont\_year_i\right) + \epsilon_i
+(\#eq:Smod)
+\end{equation}
 
-where `y` is the time series of interest, such as chl-a, `cont_year` is "continuous year", a continuous numerical date (e.g., July 1st 2019 would be 2019.5), `y ~ s(...)` indicates that `y` will be explained by a smoothing spline (in this case as a function of `cont_year`), and `num_knots_Y` is the number of knot or "connections" along the spline.
+where `y` is the time series of interest, such as chl-a, for observation $i$ explained by an intercept-term $\beta_0$ and a smooth function $f_1()$ for `cont_year` as "continuous year" represented as a continuous numerical date (e.g., July 1st 2019 would be 2019.5). The $f_1()$ function is a smoothing spline composed of the sum of multiple "basis functions" describing the relationship of $cont\_year$ with $y$ [@Wood17].  The smoothing splines includes a user-specified number of knots or "connections" along the spline. The $\epsilon$ term is for model errors having normal distribution with mean zero and constant variance.
 
-Smoothing was determined using generalized cross-validation (GCV, as implemented in `mgcv`), which approximately minimizes out-of-sample prediction error.  GCV works by penalizing the net curvature of a spline [@Wood04].  To allow GCV (or other alternatives) to work as intended, the number of knots that determine the maximum degrees of freedom chosen by the analyst must be sufficiently large so that the curvature penalty, rather than the number of knots, determines smoothness.  Results should not be sensitive to the number of knots; if they are, the number of knots should be increased.  In the examples below, we chose the number of knots, `num_knots_Y`, as 12 times the number of years in the time series, i.e., one knot per month. If the data were too sparse to fit 12 knots per year, the number of knots was reduced by one knot per year until the model could be estimated (i.e., 12 * years, 11 * years, etc.).   
+Smoothing was determined using generalized cross-validation (GCV, as implemented in `mgcv`), which approximately minimizes out-of-sample prediction error.  GCV works by penalizing the net curvature of a spline [@Wood04].  To allow GCV (or other alternatives) to work as intended, the number of knots that determine the maximum degrees of freedom chosen by the analyst must be sufficiently large so that the curvature penalty, rather than the number of knots, determines smoothness.  Results should not be sensitive to the number of knots; if they are, the number of knots should be increased.  In the examples below, we chose the number of knots for $f_1()$ as 12 times the number of years in the time series, i.e., one knot per month. If the data were too sparse to fit 12 knots per year, the number of knots was reduced by one knot per year until the model could be estimated (i.e., 12 * years, 11 * years, etc.).   
 
 The next three spline formulations (Model SY, SYD, and SYDI) provide progressively increasing complexity in how spline terms compose a model to smooth the raw data.  Model SY describes the time series using a linear trend plus a spline for `cont_year`:
 
-Model SY: `y ~ cont_year + s(cont_year, k = num_knots_Y)`
+\begin{equation}
+\textrm{Model SY:} y_i \sim\ \beta_0 + \beta_1\left(cont\_year_i\right) + f_1\left(cont\_year_i\right) + \epsilon_i
+(\#eq:SYmod)
+\end{equation}
 
-This model is mathematically equivalent to model S (Table \@ref(tab:modstrtab)).  The spline for `cont_year` includes an unpenalized linear trend, so a trend will be estimated in model S.  When `cont_year` is included explicitly as a linear term in model SY, `mgcv` adjusts the basis functions for the spline to exclude the linear term, thereby not over-parameterizing the model. Whereas an estimated linear trend in `cont_year` and its uncertainty can be extracted from the fitted spline in model S, model SY provides this trend directly, giving the equivalent result.  Further, package `mgcv` can penalize linear trends in splines to provide a method for variable selection (option `select = TRUE`), such as when numerous splines are included in the model formulation for variables that may or may not be important.  For our approach, this option is not used and all models specify `select = FALSE`.  Details in the supplement explain this justification. 
+where equation \@ref(eq:SYmod) is the same as equation \@ref(eq:Smod) with the addition of a linear term for $cont\_year$ related to $y_i$ by the $\beta_1$ slope parameter.
+
+This model is mathematically equivalent to model S (Table \@ref(tab:modstrtab)).  The $f_1()$ spline for `cont_year` includes an unpenalized linear trend, so a trend will be estimated in model S.  When `cont_year` is included explicitly as a linear term in model SY, `mgcv` adjusts the basis functions for the spline to exclude the linear term, thereby not over-parameterizing the model. Whereas an estimated linear trend in `cont_year` and its uncertainty can be extracted from the fitted spline in model S, model SY provides this trend directly, giving the equivalent result.  Further, package `mgcv` can penalize linear trends in splines to provide a method for variable selection (option `select = TRUE`), such as when numerous splines are included in the model formulation for variables that may or may not be important.  For our approach, this option is not used and all models specify `select = FALSE`.  Details in the supplement explain this justification. 
 
 Model SYD adds an average within-year cyclic pattern as a separate spline:
 
-Model SYD: `y ~ cont_year + s(cont_year, k = num_knots_Y) + s(doy, bs = 'cc', k = num_knots_D)`
+\begin{equation}
+\textrm{Model SYD:} y_i \sim\ \beta_0 + \beta_1\left(cont\_year_i\right) + f_1\left(cont\_year_i\right) + f_2\left(doy_i) + \epsilon_i
+(\#eq:SYDmod)
+\end{equation}
 
-where `doy` is "day-of-year" (i.e., Julian date, a count starting January 1 for each year), `bs = 'cc'` indicates that the spline will be cyclic (constrained to start and end at the same value), and `num_knots_D` is the number of knots for the `doy` spline.  While model SYD is not mathematically equivalent to models S and SY, it should produce nearly identical results.  The `doy` spline in model SYD gives the average within-year pattern and changes the interpretation of the `cont_year` spline to represent smoothed deviations from that pattern.
+where equation \@ref(eq:SYDmod) is the same as equation \@ref(eq:SYmod) with the addition of a smoothing spline for "day-of-year" ($doy$, i.e., Julian date, a count starting January 1 for each year).  The $f_2()$ spline is cyclic (using `bs = 'cc'` in `mgcv`) to constrain the start and end at the same value.  A user-specified number of knots is also included in $f_2()$. While model SYD is not mathematically equivalent to models S and SY, it should produce nearly identical results.  The `doy` spline in model SYD gives the average within-year pattern and changes the interpretation of the `cont_year` spline to represent smoothed deviations from that pattern.
 
 Models S, SY, and SYD can all potentially extract a similar signal from the raw data (Table \@ref(tab:modstrtab)).  What differs between the models is the allocation of penalties for curvature used to determine smoothness for each spline.  In model SYD, there are separate penalties for the two splines, as compared to S and SY that include penalties only for the `cont_year` spline. This is important because variation in the response variable can be differently attributed to each spline depending on the model, even while the sum of components for each model produces similar results between models.  Our goal is to extract seasonal averages from the fitted time series, which is not sensitive to different allocation of penalties among the splines in each model.  
 
@@ -132,17 +144,20 @@ Model SYD has the appealing feature that, if some parts of some years have limit
 
 Finally, the raw data can be smoothed using a bivariate spline representing an interaction between `cont_year` and `doy`. This can be expressed as:
 
-Model SYDI: `y ~ cont_year + s(cont_year, k = num_knots_Y) + s(doy, bs = "cc", k = num_knots_D) + ti(cont_year, doy, bs = c("tp", "cc"), k = c(num_knots_Y_ti, num_knots_D_ti))`
+\begin{equation}
+\textrm{Model SYDI:} y_i \sim\ \beta_0 + \beta_1\left(cont\_year_i\right) + f_1\left(cont\_year_i\right) + f_2\left(doy_i) + f_3\left(cont\_year_i, doy_i\right) + \epsilon_i
+(\#eq:SYDImod)
+\end{equation}
 
-where `ti()` specifies a tensor-product spline for a surface that varies smoothly as a function of both `cont_year` and `doy`.  The number of knots is the product of `num_knots_Y_ti` in the `cont_year` axis and `num_knots_D_ti` in the `doy` axis.  In SYDI, the need for sufficient knots can be satisfied either by sufficiently large values for `num_knots_Y_ti` and `num_knots_D_ti` or a sufficiently large value for knots in `num_knots_Y` and `num_knots_D`, but not both given limits on the model degrees of freedom.
+where equation \@ref(eq:SYDImod) is the same as equation \@ref(eq:SYDmod) with the addition of a tensor-product smoothing spline (`ti()` in `mgcv`) that varies smoothly as a function of both $cont\_year$ and $doy$.  Both $cont\_year$ and $doy$ include their own number of knots, such that the total number of knots for the spline is the product of the two. The need for sufficient knots in SYDI can be satisfied either by sufficiently large values for $f_3()$ or a sufficiently large value for knots in $f_1()$ and $f_2()$, but not both given limits on the model degrees of freedom.
 
-Following the rationale above, the relationship of model SYDI to model S is similar to that of model SYD to model S.  Model SYDI differs from model S to a greater extent than model SYD, but all of the splines use the same inputs to smooth the same data.  The univariate splines in `cont_year` and `doy` will likely not capture as much variation in model SYDI compared to model S given the fewer knots that are available to the former.  The `ti` term represents an interaction by allowing the pattern in `cont_year` to vary by `doy` and vice-versa.  The interaction term in model SYDI provides an appearance that this model is fundamentally different from those provided by the other models.  However, models S, SY, and SYD all allow within-year fluctuations to vary across years by allowing a spline to be fit through the entire time series.  Although model SYDI is the only model that includes an explicit interaction term, all of the models support the interaction conceptually. By providing this term with sufficient knots, the raw data can be fully smoothed with model SYDI to a similar degree as for the other models.  However, a very large number of knots in both the `cont_year` spline *and* in both dimensions of the interaction spline is impossible to achieve. The distinct aspect of model SYDI is the anticipation that within-year fluctuations will vary smoothly from year to year, which is unlikely for the SFE data and chl-a dynamics in many estuaries because bloom size typically varies between years. Thus, the conceptual motivation for model SYDI and its practical application are not supported for this analysis.
+Following the rationale above, the relationship of model SYDI to model S is similar to that of model SYD to model S.  Model SYDI differs from model S to a greater extent than model SYD, but all of the splines use the same inputs to smooth the same data.  The univariate splines in `cont_year` and `doy` will likely not capture as much variation in model SYDI compared to model S given the fewer knots that are available to the former.  The tensor-product spline represents an interaction by allowing the pattern in `cont_year` to vary by `doy` and vice-versa.  The interaction term in model SYDI provides an appearance that this model is fundamentally different from those provided by the other models.  However, models S, SY, and SYD all allow within-year fluctuations to vary across years by allowing a spline to be fit through the entire time series.  Although model SYDI is the only model that includes an explicit interaction term, all of the models support the interaction conceptually. By providing this term with sufficient knots, the raw data can be fully smoothed with model SYDI to a similar degree as for the other models.  However, a very large number of knots in both the `cont_year` spline *and* in both dimensions of the interaction spline is impossible to achieve. The distinct aspect of model SYDI is the anticipation that within-year fluctuations will vary smoothly from year to year, which is unlikely for the SFE data and chl-a dynamics in many estuaries because bloom size typically varies between years. Thus, the conceptual motivation for model SYDI and its practical application are not supported for this analysis.
 
-@Murphy19 used spline formulations for Chesapeake Bay water quality related to those proposed here, but for different goals and with different handling of smoothness.  They evaluated a "`gam0`" with only `s(doy)` and linear `cont_year` terms, a "`gam1`" like our SYD, and a "`gam2`" like our SYDI.  In application, only "`gam2`" was used, including the addition of splines as functions of hydrologic variables to account for finer-scale variation. Murphy et al. allowed a maximum number of knots in the `s(cont_year)` term of 2/3 times the number of years and do not explicitly consider the number of knots in the interaction spline, following an *ad hoc* allocation of variation in the data to different components based on previous interpretations of water quality dynamics in the system. Constraining splines with insufficient knots could inflate Type I error rates for temporal changes and we seek to lower this risk by increasing the upper limit for the knots for the `s(cont_year)` term.  Finally, @Murphy19 present large AIC differences between their spline formulations.  We instead emphasize that, given sufficient knots, the models represent alternative formulations of conceptually similar explanations for the data and yield similar fits (Table \@ref(tab:modstrtab)), resulting in near ties for AIC between models. 
+@Murphy19 used spline formulations for Chesapeake Bay water quality related to those proposed here, but for different goals and with different handling of smoothness.  They evaluated a "`gam0`" with only a cyclic spline for `doy` and linear `cont_year` terms, a "`gam1`" like our SYD, and a "`gam2`" like our SYDI.  In application, only "`gam2`" was used, including the addition of splines as functions of hydrologic variables to account for finer-scale variation. Murphy et al. allowed a maximum number of knots for the `cont_year` spline ($f_1()$) of 2/3 times the number of years and do not explicitly consider the number of knots in the interaction spline, following an *ad hoc* allocation of variation in the data to different components based on previous interpretations of water quality dynamics in the system. Constraining splines with insufficient knots could inflate Type I error rates for temporal changes and we seek to lower this risk by increasing the upper limit for the knots for the $f_1()$ term.  Finally, @Murphy19 present large AIC differences between their spline formulations.  We instead emphasize that, given sufficient knots, the models represent alternative formulations of conceptually similar explanations for the data and yield similar fits (Table \@ref(tab:modstrtab)), resulting in near ties for AIC between models. 
 
-We visually compare chl-a estimates from models SY, SYD, and SYDI to emphasize that similar fits can be achieved by all of the presented models (Figure \@ref(fig:modsumfig), SY is identical to S and is not shown).  Models S, SYD, and SYDI were fit to chl-a data from station 34 using large k values for the arguments `num_knots_y`, `num_knots_D`, `num_knots_Y_ti`, and `num_knots_D_ti` for each model.  Predictions by day of year from each model are visually similar (Figure \@ref(fig:modsumfig)a) and closely follow the 1:1 line (Figure \@ref(fig:modsumfig)b).  However, when contrasting the estimates using only the continuous year smoother (`s(cont_year)`), the fits differ substantially because of how each model allocates variation to the splines.  These results are also reflected in differences in the effective degrees of freedom among the additive components of each model (Table \@ref(tab:modstrtab)). Accordingly, even though the models differ by which structural component describes variation in the chl-a time series, they provide similar predictions. 
+We visually compare chl-a estimates from models SY, SYD, and SYDI to emphasize that similar fits can be achieved by all of the presented models (Figure \@ref(fig:modsumfig), SY is identical to S and is not shown).  Models S, SYD, and SYDI were fit to chl-a data from station 34 using a sufficiently high number of knots for the respective splines for each model.  Predictions by day of year from each model are visually similar (Figure \@ref(fig:modsumfig)a) and closely follow the 1:1 line (Figure \@ref(fig:modsumfig)b).  However, when contrasting the estimates using only the continuous year smoother ($f_1()$), the fits differ substantially because of how each model allocates variation to the splines.  These results are also reflected in differences in the effective degrees of freedom among the additive components of each model (Table \@ref(tab:modstrtab)). Accordingly, even though the models differ by which structural component describes variation in the chl-a time series, they provide similar predictions. 
 
-For all results, model S was used with enough knots in `num_knots_y` to evaluate chl-a trends across the monitoring stations in the SFE.  This model was chosen because of the relatively faster processing time to fit the model, while providing nearly identical explanatory power as compared to the other models (Table \@ref(tab:modstrtab)). 
+For all results, model S was used with enough knots in $f_1()$ to evaluate chl-a trends across the monitoring stations in the SFE.  This model was chosen because of the relatively faster processing time to fit the model, while providing nearly identical explanatory power as compared to the other models (Table \@ref(tab:modstrtab)). 
 
 ### Second-stage analysis: Seasonal features with uncertainties
 
@@ -331,6 +346,7 @@ continent <- getMap(resolution = 'low') %>%
   st_as_sf %>% 
   filter(continent %in% c('North America', 'South America')) %>% 
   st_transform(crs = st_crs(states)) %>% 
+  st_make_valid() %>% 
   st_buffer(dist = 0) %>% 
   st_union()
 locbuff <- st_buffer(sflocs, dist = 0.1)
@@ -437,7 +453,7 @@ p1c <- show_prddoy(mods[[3]], ylab = 'SYDI: Chl-a (ug/L)', size = 0.8, alpha = 0
   )
 
 p1 <- p1a + p1b + p1c + plot_layout(ncol = 3, widths = c(1, 1, 1))
-prds <- lapply(modstr, anlz_prd) %>% 
+prds <- lapply(modstr, anlz_prd, annual = T) %>% 
   enframe('model', 'dat') %>%
   unnest('dat')
 
@@ -528,7 +544,7 @@ seas <- tibble(
   mutate(
     est = purrr::pmap(list(doystr, doyend, yrstr, yrend), function(doystr, doyend, yrstr, yrend){
       
-      mixmet <- anlz_avgseason(mod, doystr = doystr, doyend = doyend) %>% 
+      mixmet <- anlz_metseason(mod, doystr = doystr, doyend = doyend, nsim = nsims) %>% 
         anlz_mixmeta(yrstr = yrstr, yrend = yrend)
 
       slope <- summary(mixmet)$coefficients[2, c(1, 5, 6)]
@@ -559,37 +575,37 @@ seas <- tibble(
 ylim <- c(0, 21)
 ylab <- expression(paste("Chl-a (", mu, "g ", L^-1, ")"))
 
-p1 <- show_avgseason(mod, doystr = 41, doyend = 213, yrstr = 1991, yrend = 2000, ylab = ylab) +
+p1 <- show_metseason(mod, doystr = 41, doyend = 213, yrstr = 1991, yrend = 2000, ylab = ylab, nsim = nsims) +
   coord_cartesian(ylim = ylim) + 
   labs(
     subtitle = seas[[1]],
     title = NULL
   )
-p2 <- show_avgseason(mod, doystr = 41, doyend = 213, yrstr = 2000, yrend = 2010, ylab = NULL) +
+p2 <- show_metseason(mod, doystr = 41, doyend = 213, yrstr = 2000, yrend = 2010, ylab = NULL, nsim = nsims) +
   coord_cartesian(ylim = ylim) + 
   labs(
     subtitle = seas[[2]], 
     title = NULL
   )
-p3 <- show_avgseason(mod, doystr = 41, doyend = 213, yrstr = 2010, yrend = 2019, ylab = NULL) +
+p3 <- show_metseason(mod, doystr = 41, doyend = 213, yrstr = 2010, yrend = 2019, ylab = NULL, nsim = nsims) +
   coord_cartesian(ylim = ylim) +  
   labs(
     subtitle = seas[[3]], 
     title = NULL
   )
-p4 <- show_avgseason(mod, doystr = 213, doyend = 338, yrstr = 1991, yrend = 2000, ylab = ylab) +
+p4 <- show_metseason(mod, doystr = 213, doyend = 338, yrstr = 1991, yrend = 2000, ylab = ylab, nsim = nsims) +
   coord_cartesian(ylim = ylim) + 
   labs(
     subtitle = seas[[4]], 
     title = NULL
   )
-p5 <- show_avgseason(mod, doystr = 213, doyend = 338, yrstr = 2000, yrend = 2010, ylab = NULL) +
+p5 <- show_metseason(mod, doystr = 213, doyend = 338, yrstr = 2000, yrend = 2010, ylab = NULL, nsim = nsims) +
   coord_cartesian(ylim = ylim) + 
   labs(
     subtitle = seas[[5]], 
     title = NULL
   )
-p6 <- show_avgseason(mod, doystr = 213, doyend = 338, yrstr = 2010, yrend = 2019, ylab = NULL) +
+p6 <- show_metseason(mod, doystr = 213, doyend = 338, yrstr = 2010, yrend = 2019, ylab = NULL, nsim = nsims) +
   coord_cartesian(ylim = ylim) + 
   labs(
     subtitle = seas[[6]],
@@ -730,8 +746,8 @@ knitr::include_graphics('figs/winchg.png')
 
 ```{r, results = 'hide', message = F}
 show_cmpplo <- function(fl, doystr, doyend, yrstr, yrend, ttl, ymax = NULL, 
-                        ylab = expression(paste("Chl-a (", italic(mu), "g ", L^-1, ")"))){
-    
+                        ylab = expression(paste("Chl-a (", italic(mu), "g ", L^-1, ")")), nsim){
+
   load(file = fl)
   nm <- basename(fl)
   nm <- gsub('\\.RData', '', nm)
@@ -753,10 +769,16 @@ show_cmpplo <- function(fl, doystr, doyend, yrstr, yrend, ttl, ymax = NULL,
       .groups = 'drop'
       ) %>%
     mutate(bt_avg = 10^(avg + (sdavg^2) / 2))
-  avgseas <- anlz_avgseason(mod = mod, doystr = doystr, doyend = doyend)
+  avgseas <- anlz_metseason(mod = mod, doystr = doystr, doyend = doyend, nsim = nsims) %>% 
+    rename(
+      bt_avg = bt_met
+    )
   tomod2 <- avgseas %>%
     filter(yr <= yrend & yr >= yrstr) %>%
-    mutate(S = se^2)
+    mutate(S = se^2) %>% 
+    rename(
+      avg = met
+    )
   
   # model
   obmod <- tomod1 %>%
@@ -801,7 +823,7 @@ show_cmpplo <- function(fl, doystr, doyend, yrstr, yrend, ttl, ymax = NULL,
   
   toplo3 <- data.frame(
     yr = seq(yrstr, yrend, length = 50)
-  ) %>%
+    ) %>%
     dplyr::mutate(
       avg = predict(mxmod, newdata = data.frame(yr = yr)),
       se = predict(mxmod, newdata = data.frame(yr = yr), se = T)[, 2],
@@ -869,11 +891,11 @@ show_cmpplo <- function(fl, doystr, doyend, yrstr, yrend, ttl, ymax = NULL,
 }
 
 p1 <- show_cmpplo('data/modslog_chl36.RData', doystr = 41, doyend = 213, yrstr = 1991, yrend = 2000, 
-                  ttl =  '(a) Station 36, Jan-Jul chl. averages', ymax = NULL)
+                  ttl =  '(a) Station 36, Jan-Jul chl. averages', ymax = NULL, nsim = nsims)
 p2 <- show_cmpplo('data/modslog_chl36.RData', doystr = 213, doyend = 338, yrstr = 2000, yrend = 2010, 
-                  ttl =  '(b) Station 36, Jul-Dec chl. averages', ymax = NULL, ylab = NULL)
+                  ttl =  '(b) Station 36, Jul-Dec chl. averages', ymax = NULL, ylab = NULL, nsim = nsims)
 # p3 <- show_cmpplo('data/modslog_chl34.RData', doystr = 274, doyend = 364, yrstr = 2010, yrend = 2019, 
-#                   ttl =  '(c) Station 34, Oct-Dec chl. averages', ymax = 15, ylab = NULL)
+#                   ttl =  '(c) Station 34, Oct-Dec chl. averages', ymax = 15, ylab = NULL, nsim = nsims)
 
 p <- (p1 |  p2) + plot_layout(ncol = 2)
 
@@ -974,10 +996,10 @@ knitr::kable(tab, booktabs = T, caption = cap.val)
 tab <- tibble(
   GAM = c('`S`', '`SY`', '`SYD`', '`SYDI`'),
   `Additive components` = c(
-    '`s(cont_year)`', 
-    '`cont_year + s(cont_year)`',
-    '`cont_year + s(cont_year) + s(doy)`', 
-    '`cont_year + s(cont_year) + s(doy) + ti(cont_year, doy)`'
+    '`f_1(cont_year)`', 
+    '`\beta_0cont_year + f_1(cont_year)`',
+    '`\beta_0cont_year + f_1(cont_year) + f_2(doy)`', 
+    '`\beta_0cont_year + f_1(cont_year) + f_2(doy) + f_3(cont_year, doy)`'
   ),
   Details = c(
     'A single smoother over a continuous year variable', 
