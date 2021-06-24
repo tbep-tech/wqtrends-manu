@@ -267,7 +267,7 @@ cmptrnd10 <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
   group_by(doystr, doyend, mod, fl) %>% 
   nest() %>% 
   mutate(
-    avgseas = purrr::pmap(list(mod = mod, doystr = doystr, doyend = doyend), anlz_metseason)
+    avgseas = purrr::pmap(list(mod = mod, doystr = doystr, doyend = doyend), anlz_metseason, nsims = 1000)
   ) %>% 
   unnest('data') %>% 
   mutate(
@@ -277,12 +277,12 @@ cmptrnd10 <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
     yrend = purrr::pmap(list(yrend, avgseas), function(yrend, avgseas){
       min(yrend, max(avgseas$yr))
     }),
-    metatrnd = purrr::pmap(list(avgseason = avgseas, yrstr = yrstr, yrend = yrend), anlz_mixmeta),
+    metatrnd = purrr::pmap(list(metseason = avgseas, yrstr = yrstr, yrend = yrend), anlz_mixmeta),
     lmtrnd = purrr::pmap(list(avgseas, yrstr, yrend), function(avgseas, yrstr, yrend){
       
       out <- avgseas %>% 
         filter(yr >= yrstr & yr <= yrend) %>% 
-        lm(avg ~ yr, .)
+        lm(met ~ yr, .)
       
       return(out)
       
