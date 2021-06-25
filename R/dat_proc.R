@@ -5,9 +5,10 @@ library(mgcv)
 library(flextable)
 library(officer)
 library(lubridate)
-library(mgcv)
 
 source('R/funcs.R')
+
+nsims <- 1e4
 
 # station locations -------------------------------------------------------
 
@@ -28,6 +29,8 @@ modssta <- rawdat %>%
     model = purrr::pmap(list(station, data), function(station, data){
 
       cat(station, '\n')
+      
+      data <- ungroup(data)
       out <- anlz_gam(data, trans = 'log10')
       
       return(out)
@@ -99,8 +102,8 @@ seastrnd <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
   crossing(
     fl = ., 
     tibble(
-      doystr = c(41, 213), 
-      doyend = c(213, 338)
+      doystr = c(1, 182), 
+      doyend = c(182, 364)
     ), 
     tibble(
       yrstr = c(1991, 2000, 2010),
@@ -129,7 +132,7 @@ seastrnd <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
   group_by(doystr, doyend, mod, fl) %>% 
   nest() %>% 
   mutate(
-    avgseas = purrr::pmap(list(mod = mod, doystr = doystr, doyend = doyend), anlz_metseason)
+    avgseas = purrr::pmap(list(mod = mod, doystr = doystr, doyend = doyend), anlz_metseason, nsim = nsims)
   ) %>% 
   unnest('data') %>% 
   mutate(
@@ -139,7 +142,7 @@ seastrnd <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
     yrend = purrr::pmap(list(yrend, avgseas), function(yrend, avgseas){
       min(yrend, max(avgseas$yr))
     }),
-    metatrnd = purrr::pmap(list(avgseason = avgseas, yrstr = yrstr, yrend = yrend), anlz_mixmeta)
+    metatrnd = purrr::pmap(list(metseason = avgseas, yrstr = yrstr, yrend = yrend), anlz_mixmeta)
   ) %>% 
   mutate(
     yrcoef = purrr::pmap(list(mod, metatrnd), function(mod, metatrnd){
@@ -162,7 +165,7 @@ seastrnd <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
   select(station = fl, seas = doystr, yrs = yrstr, yrcoef, pval) %>% 
   mutate(
     station = gsub('^data/modslog\\_chl|\\.RData$', '', station),
-    seas = factor(seas, levels = c('41', '213'), labels = c('Jan-Jun', 'Jul-Dec')), 
+    seas = factor(seas, levels = c('1', '182'), labels = c('Jan-Jun', 'Jul-Dec')), 
     yrs = case_when(
       yrs < 1995 ~ '1991-2000', 
       yrs >=1995 & yrs < 2005 ~ '2000-2010', 
@@ -180,8 +183,8 @@ seastrnd2 <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
   crossing(
     fl = ., 
     tibble(
-      doystr = c(41, 213), 
-      doyend = c(213, 338)
+      doystr = c(1, 182), 
+      doyend = c(182, 364)
     )
   ) %>% 
   group_by(fl) %>% 
@@ -209,7 +212,7 @@ seastrnd2 <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
     res = purrr::pmap(list(fl, mod = mod, doystr, doyend), function(fl, mod, doystr, doyend){
       
       # get slope trends
-      out <- anlz_trndseason(mod = mod, doystr = doystr, doyend = doyend, justify = 'center', win = 10)
+      out <- anlz_trndseason(mod = mod, doystr = doystr, doyend = doyend, justify = 'center', win = 10, nsim = nsims)
       
       return(out)
       
@@ -237,8 +240,8 @@ cmptrnd10 <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
     tibble(
       # doystr = c(1, 91, 182, 274),
       # doyend = c(90, 181, 273, 364)
-      doystr = c(41, 213),
-      doyend = c(213, 338)
+      doystr = c(1, 182),
+      doyend = c(182, 364)
     ), 
     tibble(
       yrstr = c(1991, 2000, 2010),
@@ -267,7 +270,7 @@ cmptrnd10 <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
   group_by(doystr, doyend, mod, fl) %>% 
   nest() %>% 
   mutate(
-    avgseas = purrr::pmap(list(mod = mod, doystr = doystr, doyend = doyend), anlz_metseason, nsims = 1000)
+    avgseas = purrr::pmap(list(mod = mod, doystr = doystr, doyend = doyend), anlz_metseason, nsim = nsims)
   ) %>% 
   unnest('data') %>% 
   mutate(
@@ -337,7 +340,7 @@ cmptrnd10 <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
   mutate(
     station = gsub('^data/modslog\\_chl|\\.RData$', '', station),
     # seas = factor(seas, levels = c('1', '91', '182', '274'), labels = c('Jan-Mar', 'Apr-Jun', 'Jul-Sep', 'Oct-Dec')),
-    seas = factor(seas, levels = c('41', '213'), labels = c('Jan-Jun', 'Jul-Dec')),
+    seas = factor(seas, levels = c('1', '182'), labels = c('Jan-Jun', 'Jul-Dec')),
     yrs = case_when(
       yrs < 1995 ~ '1990-2000', 
       yrs >=1995 & yrs < 2005 ~ '2000-2010', 
@@ -360,8 +363,8 @@ cmptrnd05 <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
     tibble(
       # doystr = c(1, 91, 182, 274),
       # doyend = c(90, 181, 273, 364)
-      doystr = c(41, 213),
-      doyend = c(213, 338)
+      doystr = c(1, 182),
+      doyend = c(182, 365)
     ), 
     tibble(
       yrstr = c(1991, 1995, 2000, 2005, 2010, 2015),
@@ -390,7 +393,7 @@ cmptrnd05 <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
   group_by(doystr, doyend, mod, fl) %>% 
   nest() %>% 
   mutate(
-    avgseas = purrr::pmap(list(mod = mod, doystr = doystr, doyend = doyend), anlz_metseason)
+    avgseas = purrr::pmap(list(mod = mod, doystr = doystr, doyend = doyend), anlz_metseason, nsim = nsims)
   ) %>% 
   unnest('data') %>% 
   mutate(
@@ -400,12 +403,12 @@ cmptrnd05 <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
     yrend = purrr::pmap(list(yrend, avgseas), function(yrend, avgseas){
       min(yrend, max(avgseas$yr))
     }),
-    metatrnd = purrr::pmap(list(avgseason = avgseas, yrstr = yrstr, yrend = yrend), anlz_mixmeta),
+    metatrnd = purrr::pmap(list(metseason = avgseas, yrstr = yrstr, yrend = yrend), anlz_mixmeta),
     lmtrnd = purrr::pmap(list(avgseas, yrstr, yrend), function(avgseas, yrstr, yrend){
       
       out <- avgseas %>% 
         filter(yr >= yrstr & yr <= yrend) %>% 
-        lm(avg ~ yr, .)
+        lm(met ~ yr, .)
       
       return(out)
       
@@ -460,7 +463,7 @@ cmptrnd05 <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
   mutate(
     station = gsub('^data/modslog\\_chl|\\.RData$', '', station),
     # seas = factor(seas, levels = c('1', '91', '182', '274'), labels = c('Jan-Mar', 'Apr-Jun', 'Jul-Sep', 'Oct-Dec')),
-    seas = factor(seas, levels = c('41', '213'), labels = c('Jan-Jun', 'Jul-Dec')),
+    seas = factor(seas, levels = c('1', '182'), labels = c('Jan-Jun', 'Jul-Dec')),
     yrs = case_when(
       yrs < 1995 ~ '1990-1995', 
       yrs >= 1995 & yrs < 2000 ~ '1995-2000',
@@ -486,8 +489,8 @@ cmptrnd15 <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
     tibble(
       # doystr = c(1, 91, 182, 274),
       # doyend = c(90, 181, 273, 364)
-      doystr = c(41, 213),
-      doyend = c(213, 338)
+      doystr = c(1, 182),
+      doyend = c(182, 338)
     ), 
     tibble(
       yrstr = c(1991, 2005),
@@ -526,12 +529,12 @@ cmptrnd15 <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
     yrend = purrr::pmap(list(yrend, avgseas), function(yrend, avgseas){
       min(yrend, max(avgseas$yr))
     }),
-    metatrnd = purrr::pmap(list(avgseason = avgseas, yrstr = yrstr, yrend = yrend), anlz_mixmeta),
+    metatrnd = purrr::pmap(list(metseason = avgseas, yrstr = yrstr, yrend = yrend), anlz_mixmeta),
     lmtrnd = purrr::pmap(list(avgseas, yrstr, yrend), function(avgseas, yrstr, yrend){
       
       out <- avgseas %>% 
         filter(yr >= yrstr & yr <= yrend) %>% 
-        lm(avg ~ yr, .)
+        lm(met ~ yr, .)
       
       return(out)
       
@@ -586,7 +589,7 @@ cmptrnd15 <- list.files('data', pattern = '^modslog\\_chl', full.names = T) %>%
   mutate(
     station = gsub('^data/modslog\\_chl|\\.RData$', '', station),
     # seas = factor(seas, levels = c('1', '91', '182', '274'), labels = c('Jan-Mar', 'Apr-Jun', 'Jul-Sep', 'Oct-Dec')),
-    seas = factor(seas, levels = c('41', '213'), labels = c('Jan-Jun', 'Jul-Dec')),
+    seas = factor(seas, levels = c('1', '182'), labels = c('Jan-Jun', 'Jul-Dec')),
     yrs = case_when(
       yrs < 2005 ~ '1990-2005', 
       yrs >= 2005 ~ '2005-2019'

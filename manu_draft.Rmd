@@ -52,7 +52,8 @@ source('R/funcs.R')
 locs <- locs %>% 
   rename(station = Station)
 
-nsims <- 1000
+nsims <- 1e4
+
 # # extract bib entries from online
 # bib_scrp('manu_draft.Rmd', 'refs.bib')
 ```
@@ -95,7 +96,7 @@ The San Francisco Estuary (SFE) is the largest estuary on the Pacific Coast of N
 
 Nitrogen and phosphorus levels in the SFE usually exceed concentrations that cause eutrophication in other estuaries.  However, the SFE has demonstrated resistance to eutrophication, which has been attributed to high concentrations of suspended sediment that reduce light penetration in the water column, low residence time caused by vigorous river flushing, and removal of primary producers by abundant suspension feeding bivalves [@Cole84;@Alpine88;@Jassby08;@Kimmerer14;@Lehman17].  The Regional Water Quality Control Board has showed renewed interest in understanding the potential for nutrient loading to negatively affect water quality for more southern areas of the SFE where harmful algal blooms, elevated summer-fall chlorophyll concentrations, and low dissolved oxygen concentrations began around 1999 (Figure \@ref(fig:obsdat)) [@Cloern20]. Although changes in the data are visually apparent, statistical analyses to quantify these changes have been insufficient particularly with respect to seasonal differences between years.
 
-We evaluated near-surface chlorophyll (chl-a) data measured biweekly to monthly from 1990 to 2019 along the longitudinal axis of the SFE extending from Central Bay (stations 18-23), South Bay (stations 24-32), and Lower South Bay (stations 34-36) (Table \@ref(tab:sumtab), Figure \@ref(fig:sitemap)). Monitoring data were obtained from the SFE Research Program of the US Geological Survey [@Cloern16;@Schraga20]. Sampling frequency varied somewhat over time and by station. Approximate monthly or biweekly sampling with coverage of at least a decade is common for many long-term monitoring programs and is the the intended use case for the methods herein. Every observation was included directly in the statistical models without spatial or temporal binning or averaging. Log$_{10}$-transformed chl-a was used for all analyses to meet assumptions of normally-distributed residuals. Methods for back-transformation of model results are provided in the supplement.
+We evaluated near-surface chlorophyll (chl-a) data measured biweekly to monthly from 1990 to 2019 along the longitudinal axis of the SFE extending from Central Bay (stations 18-23), South Bay (stations 24-32), and Lower South Bay (stations 34-36) (Table \@ref(tab:sumtab), Figure \@ref(fig:sitemap)). Monitoring data were obtained from the SFE Research Program of the US Geological Survey [@Cloern16;@Schraga20]. Sampling frequency varied somewhat over time and by station. Approximate monthly or biweekly sampling with coverage of at least a decade is common for many long-term monitoring programs and is the intended use case for the methods herein. Every observation was included directly in the statistical models without spatial or temporal binning or averaging. Log$_{10}$-transformed chl-a was used for all analyses to meet assumptions of normally-distributed residuals. Methods for back-transformation of model results are provided in the supplement.
 
 ## GAMs with uncertainty propagation
 
@@ -222,15 +223,15 @@ Model predictions for chl-a trends across all stations had an average R-squared 
 
 ## Inter-annual trend estimates
 
-Estimates of linear trends in seasonal averages across roughly ten-year windows for different seasons are shown for station 34 (Figure \@ref(fig:trnddat)). Plots a-c show trends in January to June averages while plots d-f show trends in July to December averages.  The seasonal trend analyses showed that January to June chl-a increased (log$_{10}$ chl-a slope 0.03 $\mu$g L$^{-1}$ yr$^{-1}$, 0.01-0.06 95\% confidence interval) from 1991 to 2000, whereas July to December chl-a did not change significantly.  Chl-a also increased from 2000 to 2010, but only for July to December (log$_{10}$ slope 0.03, 0.01-0.05 95\% confidence interval).  Finally, chl-a decreased from 2010 to 2019 but only for July to December (log$_{10}$ chl-a slope -0.02, -0.04-0 95\% confidence interval).  Because the trends were confined to certain times of the year, the seasonal estimates provide additional information beyond coarser estimates that cover the entire year.  
+Estimates of linear trends in seasonal averages across roughly ten-year windows for different seasons are shown for station 34 (Figure \@ref(fig:trnddat)). Plots a-c show trends in January to June averages while plots d-f show trends in July to December averages.  The seasonal trend analyses showed that January to June chl-a increased (log$_{10}$ chl-a slope 0.03 $\mu$g L$^{-1}$ yr$^{-1}$, 0.01-0.05 95\% confidence interval) from 1991 to 2000, whereas July to December chl-a did not change significantly.  Chl-a also increased from 2000 to 2010, but only for July to December (log$_{10}$ slope 0.03, 0-0.05 95\% confidence interval).  Finally, chl-a decreased from 2010 to 2019 but only for July to December (log$_{10}$ chl-a slope -0.02, -0.04-0 95\% confidence interval).  Because the trends were confined to certain times of the year, the seasonal estimates provide additional information beyond coarser estimates that cover the entire year.  
 
-Temporal changes varied among regions of the Bay and were more pronounced at southern stations.  Figure \@ref(fig:trndmap) shows results from similar analyses as those in Figure \@ref(fig:trnddat), but applied to all stations. Mixed-effects meta-analysis regressions applied to seasonal averages showed that increases (based on $p < 0.05$) for the January to June period were observed at stations 32, 34, and 36 from 1991 to 2000 and station 18 from 2000 to 2010; decreases were observed at stations 30 and 32 from 2010 to 2019. For the July to December period, increases were observed at stations 24, 27, 30, and 32 from 1991 to 2000 and stations 18, 21, 22, and 34 from 2000 to 2010, whereas decreases were observed at stations 30, 32, and 34 from 2010 to 2019.
+Temporal changes varied among regions of the Bay and were more pronounced at southern stations.  Figure \@ref(fig:trndmap) shows results from similar analyses as those in Figure \@ref(fig:trnddat), but applied to all stations. Mixed-effects meta-analysis regressions applied to seasonal averages showed that increases (based on $p < 0.05$) for the January to June period were observed at stations 32 and 34 from 1991 to 2000; decreases were observed at stations 30 and 32 from 2010 to 2019. For the July to December period, increases were observed at stations 24, 27, 30, and 32 from 1991 to 2000 and stations 18, 21, 22, 24, and 34 from 2000 to 2010, whereas decreases were observed at stations 30, 32, and 34 from 2010 to 2019.
 
-Results from a ten-year moving window comparison of seasonal trends provided additional context on when significant changes were occurring at each station (Figure \@ref(fig:winchg)).  Trends were observed at all stations that followed a general pattern of increases early in the record followed by decreases later in the record.  Increases and decreases were observed in both the January to June and July to December seasonal periods, with some notable exceptions.  In particular, the most southern stations (32, 34, 36) had increasing trends prior to 2005 only in the July to December period.  Additionally, chl-a at the more northern stations has not changed in recent years for both seasonal periods. For most stations and seasonal periods, a change from increasing to decreasing chl-a occurred around 2007.
+Results from a ten-year moving window comparison of seasonal trends provided additional context on when significant changes were occurring at each station (Figure \@ref(fig:winchg)).  Trends were observed at all stations that followed a general pattern of increases early in the record followed by decreases later in the record.  Increases and decreases were observed in both the January to June and July to December seasonal periods, with some notable exceptions.  In particular, the most southern stations (32, 34, 36) had increasing trends prior to 2005 that were more often observed in the July to December period.  Additionally, chl-a at the more northern stations has not changed in recent years for both seasonal periods. For most stations and seasonal periods, a change from increasing to decreasing chl-a occurred around 2007.
 
 ## Importance of uncertainty propagation 
 
-Results showing trend estimates from meta-analysis on GAM seasonal estimates provided different conclusions than those from either OLS regression through seasonal averages from raw data (Figure \@ref(fig:trndcmpex) row 1) or OLS regression through GAM estimates without uncertainty propagation (Figure \@ref(fig:trndcmpex) row 2). Figure \@ref(fig:trndcmpex)a shows trend estimates for station 36 for January to June averages from 1991 to 2000.  Only the meta-analysis regression results show a trend in this example (based on $p < 0.05$).  The OLS regression on observed estimates (top plot) and OLS regression on GAM estimates (middle plot) did not identify trends.  Figure \@ref(fig:trndcmpex)b shows trend estimates for the same station for July to December averages from 2000 to 2010.  Unlike the first example, only the top figure shows a trend, whereas the bottom two plots do not show trends.  In both cases, only the meta-analysis results give reliable conclusions because of full propagation of uncertainty across methods. Even in cases where the p-value threshold is not of interest, the confidence intervals from the alternative methods will be inaccurate.
+Results showing trend estimates from meta-analysis on GAM seasonal estimates provided different conclusions than those from either OLS regression through seasonal averages from raw data (Figure \@ref(fig:trndcmpex) row 1) or OLS regression through GAM estimates without uncertainty propagation (Figure \@ref(fig:trndcmpex) row 2). Figure \@ref(fig:trndcmpex)a shows trend estimates for station 30 for January to June averages from 2000 to 2010.  Only the meta-analysis regression results show a trend in this example (based on $p < 0.05$).  The OLS regression on observed estimates (top plot) and OLS regression on GAM estimates (middle plot) did not identify trends.  Figure \@ref(fig:trndcmpex)b shows trend estimates station 34 for July to December averages from 1991 to 2000.  Unlike the first example, only the middle figure shows a trend, whereas the top and bottom plots do not show trends.  In both cases, only the meta-analysis results give reliable conclusions because of full propagation of uncertainty across methods. Even in cases where the p-value threshold is not of interest, the confidence intervals from the alternative methods will be inaccurate.
 
 Applying the same comparison to all stations showed that different trend analysis methods provided conflicting information on the magnitude and significance of the seasonal chl-a changes in each decade (Figure \@ref(fig:trndcmp10)).  In many cases, the slope estimates were similar in magnitude, with some exceptions at the more southern stations where the OLS estimates suggested a larger trend than the meta-analysis methods. More importantly, differences in the magnitude of the confidence intervals between the OLS models applied to the GAM averages and the meta-analyses were also observed, reflecting the ability of the latter to more accurately assess significance of trends by accounting for uncertainty in the average estimates.
 
@@ -333,7 +334,7 @@ knitr::include_graphics('figs/obsdat.png')
 
 ```{r, results = 'hide', message = F}
 
-# station locations
+# for buffer, see https://github.com/r-spatial/sf/issues/1692
 sflocs <- locs %>% 
   st_as_sf(coords = c('lon', 'lat'), crs = 4326)
 
@@ -349,9 +350,9 @@ continent <- getMap(resolution = 'low') %>%
   st_make_valid() %>% 
   st_buffer(dist = 0) %>% 
   st_union()
-locbuff <- st_buffer(sflocs, dist = 0.1)
-locbuff2 <- st_buffer(sflocs, dist = 0.07)
-insetbb <- st_buffer(sflocs, dist = 1.5) %>% 
+locbuff <- st_buffer(sflocs, dist = units::set_units(0.1, degree))
+locbuff2 <- st_buffer(sflocs, dist = units::set_units(0.07, degree))
+insetbb <- st_buffer(sflocs, dist = units::set_units(1.5, degree)) %>% 
   st_bbox() %>% 
   st_as_sfc(crs = 4326)
 statebuff <- st_buffer(states, dist = 10)
@@ -416,11 +417,12 @@ mods <- modstr[c(1, 3, 4)]
 thm <-theme_minimal() + 
   theme(
     legend.title = element_blank(),
-    legend.position = 'right'
+    legend.position = 'right', 
+    panel.grid.minor = element_blank()
   )
 lncol <- 'tomato1'
 alph <- 0.5
-ylm <- c(0.8, 100)
+ylm <- c(0.8, 110)
 
 p1a <- show_prddoy(mods[[1]], ylab = 'S: Chl-a (ug/L)', size = 0.8, alpha = 0.8) + 
   guides(colour = ggplot2::guide_colourbar(barheight = 15, barwidth = 1)) +
@@ -466,25 +468,28 @@ toplo3 <- prds %>%
   spread(model, annvalue)
 
 p2a <- ggplot(toplo2, aes(x = S, y = SYD)) + 
-  geom_point(alpha = alph) + 
-  geom_abline(slope = 1, intercept = 0, color = lncol) + 
-  scale_y_log10(limits = ylm) + 
-  scale_x_log10(limits = ylm) + 
+  geom_point(alpha = alph) +
+  coord_trans(x = 'log10', y = 'log10', xlim = ylm, ylim = ylm) + 
+  scale_y_continuous(breaks = c(1, 10, 100))  +
+  scale_x_continuous(breaks = c(1, 10, 100)) +
+  geom_abline(intercept = 0, slope = 1, color = lncol) +
   thm + 
   labs(
     title = '(b) Estimated chl-a between models'
   )
 p2b <- ggplot(toplo2, aes(x = SYD, y = SYDI)) + 
   geom_point(alpha = alph) + 
-  geom_abline(slope = 1, intercept = 0, color = lncol) + 
-  scale_y_log10(limits = ylm) + 
-  scale_x_log10(limits = ylm) + 
+  coord_trans(x = 'log10', y = 'log10', xlim = ylm, ylim = ylm) + 
+  scale_y_continuous(breaks = c(1, 10, 100))  +
+  scale_x_continuous(breaks = c(1, 10, 100)) +
+  geom_abline(intercept = 0, slope = 1, color = lncol) +
   thm
 p2c <- ggplot(toplo2, aes(x = S, y = SYDI)) + 
   geom_point(alpha = alph) + 
-  geom_abline(slope = 1, intercept = 0, color = lncol) + 
-  scale_y_log10(limits = ylm) + 
-  scale_x_log10(limits = ylm) + 
+  coord_trans(x = 'log10', y = 'log10', xlim = ylm, ylim = ylm) + 
+  scale_y_continuous(breaks = c(1, 10, 100))  +
+  scale_x_continuous(breaks = c(1, 10, 100)) +
+  geom_abline(intercept = 0, slope = 1, color = lncol) +
   thm
 
 p2 <- p2a + p2b + p2c + plot_layout(ncol = 3)
@@ -492,24 +497,27 @@ p2 <- p2a + p2b + p2c + plot_layout(ncol = 3)
 
 p3a <- ggplot(toplo3, aes(x = S, y = SYD)) + 
   geom_point(alpha = alph) + 
-  geom_abline(slope = 1, intercept = 0, color = lncol) + 
-  scale_y_log10(limits = ylm) + 
-  scale_x_log10(limits = ylm) + 
+  coord_trans(x = 'log10', y = 'log10', xlim = ylm, ylim = ylm) + 
+  scale_y_continuous(breaks = c(1, 10, 100))  +
+  scale_x_continuous(breaks = c(1, 10, 100)) +
+  geom_abline(intercept = 0, slope = 1, color = lncol) +
   thm +
   labs(
     title = '(c) Estimated smoother for continuous year between models'
     )
 p3b <- ggplot(toplo3, aes(x = SYD, y = SYDI)) + 
   geom_point(alpha = alph) + 
-  geom_abline(slope = 1, intercept = 0, color = lncol) + 
-  scale_y_log10(limits = ylm) + 
-  scale_x_log10(limits = ylm) + 
+  coord_trans(x = 'log10', y = 'log10', xlim = ylm, ylim = ylm) + 
+  scale_y_continuous(breaks = c(1, 10, 100))  +
+  scale_x_continuous(breaks = c(1, 10, 100)) +
+  geom_abline(intercept = 0, slope = 1, color = lncol) +
   thm
 p3c <- ggplot(toplo3, aes(x = S, y = SYDI)) + 
   geom_point(alpha = alph) + 
-  geom_abline(slope = 1, intercept = 0, color = lncol) + 
-  scale_y_log10(limits = ylm) + 
-  scale_x_log10(limits = ylm) + 
+  coord_trans(x = 'log10', y = 'log10', xlim = ylm, ylim = ylm) + 
+  scale_y_continuous(breaks = c(1, 10, 100))  +
+  scale_x_continuous(breaks = c(1, 10, 100)) +
+  geom_abline(intercept = 0, slope = 1, color = lncol) +
   thm
 
 p3 <- p3a + p3b + p3c + plot_layout(ncol = 3)
@@ -536,8 +544,8 @@ mod <- modslog_chl34 %>%
   deframe()
 
 seas <- tibble(
-  doystr = c(41, 41, 41, 213, 213, 213), 
-  doyend = c(213, 213, 213, 338, 338, 338), 
+  doystr = c(1, 1, 1, 182, 182, 182), 
+  doyend = c(182, 182, 182, 364, 364, 364), 
   yrstr = c(1991, 2000, 2010, 1991, 2000, 2010), 
   yrend = c(2000, 2010, 2019, 2000, 2010, 2019)
   ) %>% 
@@ -562,8 +570,8 @@ seas <- tibble(
   unnest(est) %>% 
   mutate(
     lets = c('(a)', '(b)', '(c)', '(d)', '(e)', '(f)'), 
-    doystr = ifelse(doystr == 41, 'Jan', 'Jul'), 
-    doyend = ifelse(doyend == 213, 'Jun', 'Dec'), 
+    doystr = ifelse(doystr == 1, 'Jan', 'Jul'), 
+    doyend = ifelse(doyend == 182, 'Jun', 'Dec'), 
     pval = p_ast(pval)
   ) %>% 
   unite('seas', doystr, doyend, sep = '-') %>% 
@@ -575,37 +583,37 @@ seas <- tibble(
 ylim <- c(0, 21)
 ylab <- expression(paste("Chl-a (", mu, "g ", L^-1, ")"))
 
-p1 <- show_metseason(mod, doystr = 41, doyend = 213, yrstr = 1991, yrend = 2000, ylab = ylab, nsim = nsims) +
+p1 <- show_metseason(mod, doystr = 1, doyend = 182, yrstr = 1991, yrend = 2000, ylab = ylab, nsim = nsims) +
   coord_cartesian(ylim = ylim) + 
   labs(
     subtitle = seas[[1]],
     title = NULL
   )
-p2 <- show_metseason(mod, doystr = 41, doyend = 213, yrstr = 2000, yrend = 2010, ylab = NULL, nsim = nsims) +
+p2 <- show_metseason(mod, doystr = 1, doyend = 182, yrstr = 2000, yrend = 2010, ylab = NULL, nsim = nsims) +
   coord_cartesian(ylim = ylim) + 
   labs(
     subtitle = seas[[2]], 
     title = NULL
   )
-p3 <- show_metseason(mod, doystr = 41, doyend = 213, yrstr = 2010, yrend = 2019, ylab = NULL, nsim = nsims) +
+p3 <- show_metseason(mod, doystr = 1, doyend = 182, yrstr = 2010, yrend = 2019, ylab = NULL, nsim = nsims) +
   coord_cartesian(ylim = ylim) +  
   labs(
     subtitle = seas[[3]], 
     title = NULL
   )
-p4 <- show_metseason(mod, doystr = 213, doyend = 338, yrstr = 1991, yrend = 2000, ylab = ylab, nsim = nsims) +
+p4 <- show_metseason(mod, doystr = 182, doyend = 364, yrstr = 1991, yrend = 2000, ylab = ylab, nsim = nsims) +
   coord_cartesian(ylim = ylim) + 
   labs(
     subtitle = seas[[4]], 
     title = NULL
   )
-p5 <- show_metseason(mod, doystr = 213, doyend = 338, yrstr = 2000, yrend = 2010, ylab = NULL, nsim = nsims) +
+p5 <- show_metseason(mod, doystr = 182, doyend = 364, yrstr = 2000, yrend = 2010, ylab = NULL, nsim = nsims) +
   coord_cartesian(ylim = ylim) + 
   labs(
     subtitle = seas[[5]], 
     title = NULL
   )
-p6 <- show_metseason(mod, doystr = 213, doyend = 338, yrstr = 2010, yrend = 2019, ylab = NULL, nsim = nsims) +
+p6 <- show_metseason(mod, doystr = 182, doyend = 364, yrstr = 2010, yrend = 2019, ylab = NULL, nsim = nsims) +
   coord_cartesian(ylim = ylim) + 
   labs(
     subtitle = seas[[6]],
@@ -745,10 +753,13 @@ knitr::include_graphics('figs/winchg.png')
 ```
 
 ```{r, results = 'hide', message = F}
-show_cmpplo <- function(datin, doystr, doyend, yrstr, yrend, ttl, ymax = NULL, 
+show_cmpplo <- function(fl, doystr, doyend, yrstr, yrend, ttl, ymax = NULL, 
                         ylab = expression(paste("Chl-a (", italic(mu), "g ", L^-1, ")")), nsim){
 
-  mod <- datin %>%
+  load(file = fl)
+  nm <- basename(fl)
+  nm <- gsub('\\.RData', '', nm)
+  mod <- get(nm) %>%
     pull(model) %>%
     deframe()
   
@@ -887,14 +898,10 @@ show_cmpplo <- function(datin, doystr, doyend, yrstr, yrend, ttl, ymax = NULL,
 
 }
 
-
-load(file = 'data/modslog_chl32.RData')
-datin <- modslog_chl32
-
-p1 <- show_cmpplo(datin, doystr = 41, doyend = 213, yrstr = 1991, yrend = 2000, 
-                  ttl =  '(a) Station 36, Jan-Jun chl. averages', ymax = NULL, nsim = nsims)
-p2 <- show_cmpplo(datin, doystr = 213, doyend = 338, yrstr = 2000, yrend = 2010, 
-                  ttl =  '(b) Station 36, Jul-Dec chl. averages', ymax = NULL, ylab = NULL, nsim = nsims)
+p1 <- show_cmpplo('data/modslog_chl30.RData', doystr = 1, doyend = 182, yrstr = 2010, yrend = 2019, 
+                  ttl =  '(b) Station 30, Jan-Jun chl. averages', ymax = NULL, ylab = NULL, nsim = nsims)
+p2 <- show_cmpplo('data/modslog_chl34.RData', doystr = 182, doyend = 364, yrstr = 1991, yrend = 2000, 
+                  ttl =  '(a) Station 34, Jul-Dec chl. averages', ymax = 16, nsim = nsims)
 # p3 <- show_cmpplo('data/modslog_chl34.RData', doystr = 274, doyend = 364, yrstr = 2010, yrend = 2019, 
 #                   ttl =  '(c) Station 34, Oct-Dec chl. averages', ymax = 15, ylab = NULL, nsim = nsims)
 
@@ -910,7 +917,7 @@ png('figs/trndcmpex.png', height = 6.5, width = 7.75, family = 'serif', units = 
 p
 dev.off()
 ```
-```{r trndcmpex, fig.cap = 'Trend estimate comparisons (arithmetic scale) for three models applied to seasonal averages of chl-a in different annual periods at station 36. The first row shows OLS (ordinary least squares) regression applied to seasonal averages of chl-a from the raw data, the second row shows OLS regression applied to seasonal averages of chl-a from the GAM (without error propagation), and the third row shows meta-analysis regression applied to the seasonal averages of chl-a from the GAM.  Regressions in each plot are fit through the seasonal estimates indicated in the plot titles for a specified year range.  These examples on selected periods of time show that slope estimates can be similar, but the confidence intervals vary.'}
+```{r trndcmpex, fig.cap = 'Trend estimate comparisons (arithmetic scale) for three models applied to seasonal averages of chl-a in different annual periods at stations (a) 30 and (b) 34. The first row shows OLS (ordinary least squares) regression applied to seasonal averages of chl-a from the raw data, the second row shows OLS regression applied to seasonal averages of chl-a from the GAM (without error propagation), and the third row shows meta-analysis regression applied to the seasonal averages of chl-a from the GAM.  Regressions in each plot are fit through the seasonal estimates indicated in the plot titles for a specified year range.'}
 knitr::include_graphics('figs/trndcmpex.png')
 ```
 
