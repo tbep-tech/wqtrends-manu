@@ -16,5 +16,5 @@ For STOTEN:
 DONT FORGET
 
 - manually format table 1 formulas
-- track changes for refernces added (e.g., Lortie)
+- track changes for references added (e.g., Lortie)
 - line numbers in review response
