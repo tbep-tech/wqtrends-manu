@@ -2,6 +2,9 @@ on:
   push:
     paths:
       - manu_draft.Rmd
+    branches:
+      - main
+      - master
       
 name: build
 
