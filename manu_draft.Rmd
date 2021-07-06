@@ -120,7 +120,7 @@ Smoothing was determined using generalized cross-validation (GCV, as implemented
 The next three spline formulations (Model SY, SYD, and SYDI) provide progressively increasing complexity in how spline terms compose a model to smooth the raw data.  Model SY describes the time series using a linear trend plus a spline for `cont_year`:
 
 \begin{equation}
-\textrm{Model SY:} y_i \sim\ \beta_0 + \beta_1\left(cont\_year_i\right) + f_1\left(cont\_year_i\right) + \epsilon_i
+\textrm{Model SY:} y_i \sim\ \beta_0 + \beta_1 cont\_year_i + f_1\left(cont\_year_i\right) + \epsilon_i
 (\#eq:SYmod)
 \end{equation}
 
@@ -131,7 +131,7 @@ This model is mathematically equivalent to model S (Table \@ref(tab:modstrtab)).
 Model SYD adds an average within-year cyclic pattern as a separate spline:
 
 \begin{equation}
-\textrm{Model SYD:} y_i \sim\ \beta_0 + \beta_1\left(cont\_year_i\right) + f_1\left(cont\_year_i\right) + f_2\left(doy_i) + \epsilon_i
+\textrm{Model SYD:} y_i \sim\ \beta_0 + \beta_1 cont\_year_i + f_1\left(cont\_year_i\right) + f_2\left(doy_i) + \epsilon_i
 (\#eq:SYDmod)
 \end{equation}
 
@@ -146,7 +146,7 @@ Model SYD has the appealing feature that, if some parts of some years have limit
 Finally, the raw data can be smoothed using a bivariate spline representing an interaction between `cont_year` and `doy`. This can be expressed as:
 
 \begin{equation}
-\textrm{Model SYDI:} y_i \sim\ \beta_0 + \beta_1\left(cont\_year_i\right) + f_1\left(cont\_year_i\right) + f_2\left(doy_i) + f_3\left(cont\_year_i, doy_i\right) + \epsilon_i
+\textrm{Model SYDI:} y_i \sim\ \beta_0 + \beta_1 cont\_year_i + f_1\left(cont\_year_i\right) + f_2\left(doy_i) + f_3\left(cont\_year_i, doy_i\right) + \epsilon_i
 (\#eq:SYDImod)
 \end{equation}
 

@@ -16,5 +16,6 @@ For STOTEN:
 DONT FORGET
 
 - manually format table 1 formulas
+- equation for model SYDI, make it fit nicely 
 - track changes for references added (e.g., Lortie)
 - line numbers in review response

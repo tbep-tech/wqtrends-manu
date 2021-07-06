@@ -17,7 +17,9 @@ knitr::opts_chunk$set(fig.path = 'figs/', warning = F, message = F, echo = F, ca
 spelling::spell_check_files('revision-response.Rmd')
 ```
 
-We sincerely thank the reviewers for providing thoughtful comments on our manuscript.  We have provided a point-by-point response to these comments below.  We are confident that these additions and revisions improve the content of our manuscript for readers of Science of the Total Environment.  
+We sincerely thank the reviewers for providing thoughtful comments on our manuscript.  We have provided a point-by-point response to these comments below.  We are confident that these additions and revisions improve our manuscript for readers of Science of the Total Environment.  
+
+In addition to making revisions that address points raised by the reviewers, we have also taken the opportunity to make minor improvements that we identified.
 
 ## Reviewer 1
 
@@ -31,17 +33,17 @@ This manuscript is a welcome addition in the world of trend analyses. The author
 \end{equation}
 
 \begin{equation}
-\textrm{Model SY:} y_i \sim\ \beta_0 + \beta_1\left(cont\_year_i\right) + f_1\left(cont\_year_i\right) + \epsilon_i
+\textrm{Model SY:} y_i \sim\ \beta_0 + \beta_1 cont\_year_i + f_1\left(cont\_year_i\right) + \epsilon_i
 (\#eq:SYmod)
 \end{equation}
 
 \begin{equation}
-\textrm{Model SYD:} y_i \sim\ \beta_0 + \beta_1\left(cont\_year_i\right) + f_1\left(cont\_year_i\right) + f_2\left(doy_i) + \epsilon_i
+\textrm{Model SYD:} y_i \sim\ \beta_0 + \beta_1 cont\_year_i + f_1\left(cont\_year_i\right) + f_2\left(doy_i) + \epsilon_i
 (\#eq:SYDmod)
 \end{equation}
 
 \begin{equation}
-\textrm{Model SYDI:} y_i \sim\ \beta_0 + \beta_1\left(cont\_year_i\right) + f_1\left(cont\_year_i\right) + f_2\left(doy_i) + f_3\left(cont\_year_i, doy_i\right) + \epsilon_i
+\textrm{Model SYDI:} y_i \sim\ \beta_0 + \beta_1 cont\_year_i + f_1\left(cont\_year_i\right) + f_2\left(doy_i) + f_3\left(cont\_year_i, doy_i\right) + \epsilon_i
 (\#eq:SYDImod)
 \end{equation}
 
@@ -61,13 +63,13 @@ We applied the wqtrends code in R to a time series data set of X2 (salinity intr
 
 * __Response__: Very rarely do reviewers actually apply the proposed methods on novel datasets as a proof of concept.  For that, we are very appreciative of your efforts in exploring the R package. These applications are important for testing both the method and software.  As such, you exposed an important limitation of our method that was not clearly articulated in the draft.  We provide two responses to this limitation.  
 
-     First, the X2 dataset is collected daily, so the GAM smoothing methods proposed in our manuscript for "irregularly spaced or missing" monitoring data is unnecessary.  The modelling approach is designed to provide both a continuous (e.g., daily) estimate of the long-term trend and a measure of uncertainty in the absence of more regularly collected values.  So, application of our method to datasets with sampling intervals longer than the daily scale would be more appropriate.
+     First, the X2 dataset is at the daily scale, so one aspect of the GAM smoothing methods proposed in our manuscript for "irregularly spaced or missing" monitoring data is unnecessary.  The GAMs provide two benefits: smoothing irregularly spaced data and estimating the non-independence of sequential data so that propagated uncertainty does not incorrectly assume sequential data are independent.  The modelling approach is designed to provide both a continuous (e.g., daily) estimate of the long-term trend and a measure of uncertainty in the absence of more regularly collected values.  So, application of our method to datasets with sampling intervals longer than the daily scale would be the most compelling use case, but they are nevertheless relevant for uncertainty propagation even with daily data.  However, because some of the daily X2 values are in fact imputed, it would be appropriate to use the raw data only in our method, and possibly to enrich the GAM with whatever domain-specific model is used for smoothing X2 values, in order to fully propagate uncertainty.
      
-     Second, and more important, the practical limitations of applying a GAM with flexible smoothing to nearly 100 years of daily data is beyond the computational power of most desktop computers.  This is asking too much of the smoothing splines used in the mgcv package. Given this limitation, we do feel it is important to clearly state the intended use case for these models to avoid confusion in application.  We have added clarification both in the manuscript and the package vignette to clearly indicate the type of data that is appropriate for the methods.  
+     Second, and more important, the practical limitations of applying a GAM with flexible smoothing to nearly 100 years of daily data is beyond the computational power of most desktop computers.  This is asking too much of the smoothing splines used in the mgcv package. Given this limitation, we do feel it is important to clearly state the intended use case for these models to avoid confusion in application.  We have added clarification both in the manuscript and the package vignette to clearly indicate the type of data that is appropriate for the methods. In practice, if one wants to analyze such a long series, one could break it down into multiple (possibly overlapping) shorter series for the first two stages (GAM estimation and seasonal averaging with uncertainty propagation).  The only difference would be that the estimated optimal degree of smoothness might change across different time windows, but that may be appropriate and supported by having so much data.  
      
-     In the manuscript, line xyx: "Approximate monthly or biweekly sampling with coverage of at least a decade is common for many long-term monitoring programs and is the intended use case for the methods herein."
+     In the manuscript, line xyx: "Approximate monthly or biweekly sampling with coverage of at least a decade is common for many long-term monitoring programs and is the motivating use case for the methods herein."
      
-     In the package vignette, first paragraph (https://tbep-tech.github.io/wqtrends/articles/introduction.html): "These models are appropriate for data typically from surface water quality monitoring programs at roughly monthly or biweekly collection intervals, covering at least a decade of observations (e.g., Cloern and Schraga 2016). Daily or continuous monitoring data are not appropriate for these methods, due to computational limitations and a goal of the analysis to estimate long-term, continuous trends from irregular or discontinuous sampling."
+     In the package vignette, first paragraph (https://tbep-tech.github.io/wqtrends/articles/introduction.html): "These models are appropriate for data typically from surface water quality monitoring programs at roughly monthly or biweekly collection intervals, covering at least a decade of observations (e.g., Cloern and Schraga 2016). Daily or continuous monitoring data covering many years are not appropriate for these methods, due to computational limitations and a goal of the analysis to estimate long-term, continuous trends from irregular or discontinuous sampling."
      
 ### Utility (2):
 
