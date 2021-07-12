@@ -1,6 +1,5 @@
 For STOTEN: 
 
-- change cls, https://www.zotero.org/styles?q=science%20of%20the%20total%20envi
 - recompile manu, supplement
 - manu double space
 - title page by hand (full affiliations), same for supplement

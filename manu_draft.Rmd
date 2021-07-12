@@ -259,7 +259,7 @@ Finally, the evaluation of trends for alternative water quality variables in add
 
 # Acknowledgments
 
-We thank the staff of the US Geological Survey that collect and maintain long-term monitoring data in San Francisco Bay.  This work benefited from discussions with the San Francisco Bay Nutrient Technical Workgroup and Steering Committee.  We thank James D. Hagy III for reviewing an earlier draft of this manuscript.
+We thank the staff of the US Geological Survey that collect and maintain long-term monitoring data in San Francisco Bay.  This work benefited from discussions with the San Francisco Bay Nutrient Technical Workgroup and Steering Committee. We thank James D. Hagy III and two anonymous reviewers for providing helpful comments on this manuscript.
 
 # Figures
 
@@ -323,7 +323,7 @@ p2 <- ggplot(toplo2, aes(x = mo, y = value, fill = yrcat)) +
 p <- p1 + p2 + plot_layout(ncol = 1)
 
 # save as tiff
-tiff('submission/Fig1.tiff', height = 7, width = 8, family = 'serif', units = 'in', res = 600, compression = 'lzw')
+tiff('revision/Fig1.tiff', height = 7, width = 8, family = 'serif', units = 'in', res = 600, compression = 'lzw')
 print(p)
 dev.off()
 
@@ -401,7 +401,7 @@ p <- p1 +
   inset(ggplotGrob(p2), xmin = -122.2, xmax = -121.97, ymin = 37.75, ymax = 37.983)
 
 # save as tiff
-tiff('submission/Fig2.tiff', height = 6.5, width = 5, units = 'in', family = 'serif', res = 600, compression = 'lzw')
+tiff('revision/Fig2.tiff', height = 6.5, width = 5, units = 'in', family = 'serif', res = 600, compression = 'lzw')
 print(p)
 dev.off()
 
@@ -529,7 +529,7 @@ p3 <- p3a + p3b + p3c + plot_layout(ncol = 3)
 out <- p1 / p2 / p3
 
 # save as tiff
-tiff('submission/Fig3.tiff', height = 7, width = 8, units = 'in', family = 'serif', res = 600, compression = 'lzw')
+tiff('revision/Fig3.tiff', height = 7, width = 8, units = 'in', family = 'serif', res = 600, compression = 'lzw')
 print(out)
 dev.off()
 
@@ -584,7 +584,7 @@ seas <- tibble(
   unite('lets', lets, seas, est, pval, sep = ', ') %>% 
   deframe
 
-ylim <- c(0, 21)
+ylim <- c(0, 24)
 ylab <- expression(paste("Chl-a (", mu, "g ", L^-1, ")"))
 
 p1 <- show_metseason(mod, doystr = 1, doyend = 182, yrstr = 1991, yrend = 2000, ylab = ylab, nsim = nsims) +
@@ -632,7 +632,7 @@ p <- p1 + p2 + p3 + p4 + p5 + p6 + plot_layout(nrow = 2) &
     )
 
 # save as tiff
-tiff('submission/Fig4.tiff', height = 6, width = 11, family = 'serif', units = 'in', res = 600, compression = 'lzw')
+tiff('revision/Fig4.tiff', height = 6, width = 11, family = 'serif', units = 'in', res = 600, compression = 'lzw')
 print(p)
 dev.off()
 
@@ -686,7 +686,7 @@ p <- ggmap(bsmap1_transparent) +
   guides(fill = guide_colourbar(barheight = 0.5, barwidth = 8)) 
 
 # save as tiff
-tiff('submission/Fig5.tiff', height = 6.5, width = 7.5, family = 'serif', units = 'in', res = 600, compression = 'lzw')
+tiff('revision/Fig5.tiff', height = 6.5, width = 7.5, family = 'serif', units = 'in', res = 600, compression = 'lzw')
 p
 dev.off()
 
@@ -743,7 +743,7 @@ p <- ggplot(data = toplo, aes(x = yr, y = yrcoef, fill = pval)) +
   )
 
 # save as tiff
-tiff('submission/Fig6.tiff', height = 8, width = 8, family = 'serif', units = 'in', res = 600, compression = 'lzw')
+tiff('revision/Fig6.tiff', height = 8, width = 8, family = 'serif', units = 'in', res = 600, compression = 'lzw')
 print(p)
 dev.off()
 
@@ -912,7 +912,7 @@ p2 <- show_cmpplo('data/modslog_chl34.RData', doystr = 182, doyend = 364, yrstr 
 p <- (p1 |  p2) + plot_layout(ncol = 2)
 
 # save as tif
-tiff('submission/Fig7.tiff', height = 6.5, width = 7.75, family = 'serif', units = 'in', res = 600, compression = 'lzw')
+tiff('revision/Fig7.tiff', height = 6.5, width = 7.75, family = 'serif', units = 'in', res = 600, compression = 'lzw')
 p
 dev.off()
 
@@ -952,7 +952,7 @@ p <- ggplot(toplo, aes(y = station, x = yrcoef, linetype = pval, shape = modtyp,
   )
 
 # save as tiff
-tiff('submission/Fig8.tiff', height = 6, width = 7.5, family = 'serif', units = 'in', res = 600, compression = 'lzw')
+tiff('revision/Fig8.tiff', height = 6, width = 7.5, family = 'serif', units = 'in', res = 600, compression = 'lzw')
 p
 dev.off()
 
@@ -1021,7 +1021,7 @@ tab <- tibble(
   )
 
 # table stuff
-cap.val <- 'Summary and details for each of the GAM structures.  In practice, a sufficiently large number of knots provided to the additive terms will produce identical or comparable estimates for a response variable.  The models differ in the allocation of penalties for the smoothness of each spline (`s()`).'
+cap.val <- 'Summary and details for each of the GAM structures.  In practice, a sufficiently large number of knots provided to the additive terms will produce identical or comparable estimates for a response variable.  The models differ in the allocation of penalties for the smoothness of each spline.'
 
 # table
 knitr::kable(tab, booktabs = T, caption = cap.val)
